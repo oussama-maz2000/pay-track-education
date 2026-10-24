@@ -1,0 +1,724 @@
+<section class="space-y-6 pb-8">
+  <header
+    class="relative overflow-hidden rounded-3xl bg-sky-950 px-6 py-8 text-white shadow-2xl shadow-sky-950/15 sm:px-8"
+  >
+    <div
+      class="absolute inset-0 opacity-25"
+      style="
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+        background-size: 28px 28px;
+      "
+    ></div>
+    <div
+      class="absolute -right-20 -top-24 size-72 rounded-full bg-cyan-300/20 blur-3xl"
+    ></div>
+    <div
+      class="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div class="max-w-2xl">
+        <p
+          class="flex items-center gap-2 text-xs font-semibold tracking-[.22em] text-cyan-200 uppercase"
+        >
+          <span class="size-2 rounded-full bg-cyan-200"></span>Répertoire des étudiants
+        </p>
+        <h1
+          class="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl"
+        >
+          Tous les étudiants, au même endroit.
+        </h1>
+        <p class="mt-3 text-sm leading-6 text-sky-100/75 sm:text-base">
+          Gardez les coordonnées des étudiants et des parents exactes,
+          accessibles et prêtes pour le suivi.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="openCreateForm()"
+        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 text-sm font-semibold text-sky-950 shadow-lg shadow-cyan-300/15 transition hover:-translate-y-0.5 hover:bg-cyan-200 focus:outline-hidden focus:ring-3 focus:ring-cyan-200/40"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+        Nouvel étudiant
+      </button>
+    </div>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <article
+      class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+    >
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+        Étudiants inscrits
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ totalStudents() }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Across all pages
+      </p>
+    </article>
+    <article
+      class="rounded-2xl border border-sky-100 bg-sky-50/60 p-5 shadow-theme-xs dark:border-sky-500/15 dark:bg-sky-500/5"
+    >
+      <p class="text-sm font-medium text-sky-800 dark:text-sky-200">
+        Actifs sur cette page
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-sky-900 dark:text-sky-100"
+      >
+        {{ activeStudentsOnPage() }}
+      </p>
+      <p class="mt-1 text-xs text-sky-700/75 dark:text-sky-300/70">
+        Étudiants actuellement disponibles
+      </p>
+    </article>
+  </div>
+
+  <div
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+  >
+    <div
+      class="flex flex-col gap-4 border-b border-gray-100 p-5 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Registre des étudiants
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Consultez, modifiez, archivez ou restaurez les dossiers des étudiants.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <label class="relative block min-w-56">
+          <span class="sr-only">Search students</span>
+          <svg
+            class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              cx="11"
+              cy="11"
+              r="6"
+              stroke="currentColor"
+              stroke-width="1.8"
+            />
+            <path
+              d="m16 16 4 4"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            />
+          </svg>
+          <input
+            type="search"
+            [value]="searchTerm()"
+            (input)="onSearch($event)"
+            placeholder="Rechercher un étudiant"
+            class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-800 outline-hidden transition placeholder:text-gray-400 focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          />
+        </label>
+        <select
+          (change)="onActiveFilterChange($event)"
+          class="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 outline-hidden focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <option value="all">Tous les statuts</option>
+          <option value="active">Actif</option>
+          <option value="archived">Archivé</option>
+        </select>
+        <button
+          type="button"
+          (click)="refreshStudents()"
+          [disabled]="studentStore.loadingStudent()"
+          class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+        >
+          Actualiser
+        </button>
+      </div>
+    </div>
+
+    @if (studentStore.error()) {
+      <div
+        class="mx-5 mt-5 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ studentStore.error() }}
+      </div>
+    }
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-200 text-left">
+        <thead
+          class="bg-gray-50/80 text-xs font-semibold tracking-[.1em] text-gray-500 uppercase dark:bg-gray-900/60 dark:text-gray-400"
+        >
+          <tr>
+            <th class="px-5 py-4">Student</th>
+            <th class="px-5 py-4">Phone</th>
+            <th class="px-5 py-4">Status</th>
+            <th class="px-5 py-4">Created at</th>
+            <th class="px-5 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @if (studentStore.loadingStudent()) {
+            @for (row of [1, 2, 3]; track row) {
+              <tr class="animate-pulse">
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-44 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-28 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-6 w-20 rounded-full bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-28 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td></td>
+              </tr>
+            }
+          } @else {
+            @for (student of filteredStudents(); track student.id) {
+              <tr
+                class="group transition hover:bg-slate-50/70 dark:hover:bg-white/[.02]"
+              >
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="grid size-10 place-items-center rounded-xl bg-sky-50 text-xs font-bold text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+                      >{{ student.firstName.slice(0, 1)
+                      }}{{ student.lastName.slice(0, 1) }}</span
+                    >
+                    <div>
+                      <p class="font-semibold text-gray-900 dark:text-white">
+                        {{ student.firstName }} {{ student.lastName }}
+                      </p>
+                      <p
+                        class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
+                      >
+                        Created by {{ student.createdBy || 'System' }}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  {{ student.phoneNumber1 }}
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    [class]="
+                      'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+                      (student.active
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+                        : 'border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300')
+                    "
+                    >{{ student.active ? 'Active' : 'Archived' }}</span
+                  >
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  {{ student.createdAt | date: 'dd MMM yyyy' }}
+                </td>
+                <td class="px-5 py-4">
+                  <div class="relative flex justify-end">
+                    <button
+                      type="button"
+                      (click)="toggleActionMenu(student.id)"
+                      [attr.aria-expanded]="openActionMenuId() === student.id"
+                      class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-sky-500/10"
+                    >
+                      Actions
+                      <svg class="size-3.5" viewBox="0 0 24 24" fill="none">
+                        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                    @if (openActionMenuId() === student.id) {
+                      <div class="absolute right-0 top-full z-20 mt-2 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white p-1.5 text-left shadow-lg shadow-gray-900/10 dark:border-gray-700 dark:bg-gray-900">
+                        <button type="button" (click)="openDetails(student)" [disabled]="studentStore.loadingStudentDetails()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-50 disabled:opacity-50 dark:text-sky-300 dark:hover:bg-sky-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8"/></svg>Détails</button>
+                        <button type="button" (click)="openEditForm(student)" [disabled]="studentStore.savingStudent() || studentStore.loadingStudentDetails()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-800"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Modifier</button>
+                        <div class="my-1 border-t border-gray-100 dark:border-gray-800"></div>
+                        @if (student.active) {
+                          <button type="button" (click)="openDeleteDialog(student)" [disabled]="studentStore.savingStudent()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-error-600 transition hover:bg-error-50 disabled:opacity-50 dark:text-error-400 dark:hover:bg-error-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Archive</button>
+                        } @else {
+                          <button type="button" (click)="restoreStudent(student)" [disabled]="studentStore.savingStudent()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50 dark:text-emerald-300 dark:hover:bg-emerald-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Restore</button>
+                        }
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="px-5 py-16 text-center">
+                  <div
+                    class="mx-auto grid size-12 place-items-center rounded-2xl bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+                  >
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20m12-12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM7 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <h3 class="mt-4 font-semibold text-gray-900 dark:text-white">
+                    No students found
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Try a different filter or register the first student.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="openCreateForm()"
+                    class="mt-5 text-sm font-semibold text-brand-600 dark:text-brand-400"
+                  >
+                    Create student
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [paginationSignal]="studentStore.pagination"
+      (onPageChange)="onStudentsPageChange($event)"
+    />
+  </div>
+</section>
+
+<app-modal
+  [isOpen]="isFormOpen()"
+  (close)="closeForm()"
+  className="max-w-3xl mx-4"
+>
+  <form
+    [formGroup]="studentForm"
+    (ngSubmit)="submitStudent()"
+    class="p-6 sm:p-8"
+  >
+    <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+      <p
+        class="text-xs font-semibold tracking-[.18em] text-sky-700 uppercase dark:text-sky-300"
+      >
+        Informations étudiant
+      </p>
+      <h2
+        class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ editingStudent() ? 'Modifier l’étudiant' : 'Créer un étudiant' }}
+      </h2>
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        Add the learner’s contact information and a parent or guardian contact.
+      </p>
+    </div>
+    <div class="mt-6 grid gap-5 sm:grid-cols-2">
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Prénom</span
+        ><input
+          formControlName="firstName"
+          type="text"
+          autocomplete="given-name"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            studentForm.controls.firstName.invalid &&
+            studentForm.controls.firstName.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            studentForm.controls.firstName.invalid &&
+            studentForm.controls.firstName.touched
+          ) {
+            Le prénom est obligatoire.
+          }
+        </span></label
+      >
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Nom</span
+        ><input
+          formControlName="lastName"
+          type="text"
+          autocomplete="family-name"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            studentForm.controls.lastName.invalid &&
+            studentForm.controls.lastName.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            studentForm.controls.lastName.invalid &&
+            studentForm.controls.lastName.touched
+          ) {
+            Le nom est obligatoire.
+          }
+        </span></label
+      >
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >E-mail de l’étudiant</span
+        ><input
+          formControlName="email"
+          type="email"
+          autocomplete="email"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            studentForm.controls.email.invalid &&
+            studentForm.controls.email.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            studentForm.controls.email.invalid &&
+            studentForm.controls.email.touched
+          ) {
+            Enter a valid email address.
+          }
+        </span></label
+      >
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Date de naissance</span
+        ><input
+          formControlName="birthDay"
+          type="date"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            studentForm.controls.birthDay.invalid &&
+            studentForm.controls.birthDay.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            studentForm.controls.birthDay.invalid &&
+            studentForm.controls.birthDay.touched
+          ) {
+            La date de naissance est obligatoire.
+          }
+        </span></label
+      >
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Téléphone principal</span
+        ><input
+          formControlName="phoneNumber1"
+          type="tel"
+          autocomplete="tel"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            studentForm.controls.phoneNumber1.invalid &&
+            studentForm.controls.phoneNumber1.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            studentForm.controls.phoneNumber1.invalid &&
+            studentForm.controls.phoneNumber1.touched
+          ) {
+            Le téléphone principal est obligatoire.
+          }
+        </span></label
+      >
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Secondary phone <span class="text-gray-400">(optional)</span></span
+        ><input
+          formControlName="phoneNumber2"
+          type="tel"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+      /></label>
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Parent email <span class="text-gray-400">(optional)</span></span
+        ><input
+          formControlName="parentEmail"
+          type="email"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            studentForm.controls.parentEmail.invalid &&
+            studentForm.controls.parentEmail.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            studentForm.controls.parentEmail.invalid &&
+            studentForm.controls.parentEmail.touched
+          ) {
+            Enter a valid parent email address.
+          }
+        </span></label
+      >
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Parent phone <span class="text-gray-400">(optional)</span></span
+        ><input
+          formControlName="parentPhone"
+          type="tel"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+      /></label>
+      <label
+        class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-4 sm:col-span-2 dark:border-gray-700"
+        ><input
+          formControlName="active"
+          type="checkbox"
+          class="size-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+        /><span
+          ><span
+            class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+            >Active student</span
+          ><span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400"
+            >Inactive students remain archived until restored.</span
+          ></span
+        ></label
+      >
+    </div>
+    <div
+      class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end dark:border-gray-800"
+    >
+      <button
+        type="button"
+        (click)="closeForm()"
+        [disabled]="studentStore.savingStudent()"
+        class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+      >
+        Annuler</button
+      ><button
+        type="submit"
+        [disabled]="studentStore.savingStudent()"
+        class="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-700 disabled:opacity-60"
+      >
+        {{
+          studentStore.savingStudent()
+            ? 'Enregistrement…'
+            : editingStudent()
+              ? 'Enregistrer les modifications'
+              : 'Créer un étudiant'
+        }}
+      </button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="isDetailsOpen()"
+  (close)="closeDetails()"
+  className="max-w-2xl mx-4"
+>
+  @if (selectedStudent(); as student) {
+    <div class="p-6 sm:p-8">
+      <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+        <div class="flex items-center gap-4">
+          <span
+            class="grid size-12 place-items-center rounded-2xl bg-sky-50 text-sm font-bold text-sky-700 dark:bg-sky-500/10 dark:text-sky-300"
+            >{{ student.firstName.slice(0, 1)
+            }}{{ student.lastName.slice(0, 1) }}</span
+          >
+          <div class="min-w-0">
+            <p
+              class="text-xs font-semibold tracking-[.18em] text-sky-700 uppercase dark:text-sky-300"
+            >
+            Profil de l’étudiant
+            </p>
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+              <h2
+                class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+              >
+                {{ student.firstName }} {{ student.lastName }}
+              </h2>
+              <span
+                [class]="
+                  'inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+                  (student.active
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+                    : 'border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300')
+                "
+              >{{ student.active ? 'Actif' : 'Archivé' }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <article
+          class="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+        >
+          <p
+            class="text-xs font-semibold tracking-wide text-gray-400 uppercase"
+          >
+            E-mail de l’étudiant
+          </p>
+          <p
+            class="mt-2 break-all text-sm font-medium text-gray-800 dark:text-gray-100"
+          >
+            {{ student.email || 'Non renseigné' }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+        >
+          <p
+            class="text-xs font-semibold tracking-wide text-gray-400 uppercase"
+          >
+            Date de naissance
+          </p>
+          <p class="mt-2 text-sm font-medium text-gray-800 dark:text-gray-100">
+            {{ student.birthDay | date: 'dd MMMM yyyy' }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+        >
+          <p
+            class="text-xs font-semibold tracking-wide text-gray-400 uppercase"
+          >
+            Téléphone principal
+          </p>
+          <p class="mt-2 text-sm font-medium text-gray-800 dark:text-gray-100">
+            {{ student.phoneNumber1 }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+        >
+          <p
+            class="text-xs font-semibold tracking-wide text-gray-400 uppercase"
+          >
+            Téléphone secondaire
+          </p>
+          <p class="mt-2 text-sm font-medium text-gray-800 dark:text-gray-100">
+            {{ student.phoneNumber2 || 'Non renseigné' }}
+          </p>
+        </article>
+      </div>
+      <div
+        class="mt-6 rounded-2xl border border-sky-100 bg-sky-50/60 p-5 dark:border-sky-500/15 dark:bg-sky-500/5"
+      >
+        <p
+          class="text-xs font-semibold tracking-[.16em] text-sky-700 uppercase dark:text-sky-300"
+        >
+            Parent ou tuteur
+        </p>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
+            <p
+              class="mt-1 break-all text-sm font-medium text-gray-800 dark:text-gray-100"
+            >
+              {{ student.parentEmail || 'Not provided' }}
+            </p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Phone</p>
+            <p
+              class="mt-1 text-sm font-medium text-gray-800 dark:text-gray-100"
+            >
+              {{ student.parentPhone || 'Not provided' }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <article
+          class="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+        >
+          <p
+            class="text-xs font-semibold tracking-wide text-gray-400 uppercase"
+          >
+            Créé par
+          </p>
+          <p
+            class="mt-2 break-all text-sm font-medium text-gray-800 dark:text-gray-100"
+          >
+            {{ student.createdBy || 'System' }}
+          </p>
+        </article>
+
+        <article
+          class="rounded-xl border border-gray-100 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/50"
+        >
+          <p
+            class="text-xs font-semibold tracking-wide text-gray-400 uppercase"
+          >
+            Créé le
+          </p>
+          <p
+            class="mt-2 break-all text-sm font-medium text-gray-800 dark:text-gray-100"
+          >
+            {{ student.createdAt | date: 'dd MMM yyyy' }}
+          </p>
+        </article>
+      </div>
+    </div>
+  }
+</app-modal>
+
+<app-modal
+  [isOpen]="isDeleteDialogOpen()"
+  (close)="closeDeleteDialog()"
+  className="max-w-md mx-4"
+>
+  <div class="p-7 text-center">
+    <div
+      class="mx-auto grid size-14 place-items-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300"
+    >
+      <svg class="size-7" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 7h14m-9 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+    <h2 class="mt-5 text-xl font-semibold text-gray-900 dark:text-white">
+      Archiver cet étudiant ?
+    </h2>
+    <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+      {{ studentPendingDeletion()?.firstName }}
+      {{ studentPendingDeletion()?.lastName }} will be marked inactive. You can
+      restore this record later.
+    </p>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeDeleteDialog()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+      >
+        Annuler</button
+      ><button
+        type="button"
+        (click)="deleteStudent()"
+        [disabled]="studentStore.savingStudent()"
+        class="h-11 flex-1 rounded-xl bg-error-600 text-sm font-semibold text-white transition hover:bg-error-700 disabled:opacity-60"
+      >
+        Archiver
+      </button>
+    </div>
+  </div>
+</app-modal>

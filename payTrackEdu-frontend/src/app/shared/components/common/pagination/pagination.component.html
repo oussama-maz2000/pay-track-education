@@ -1,0 +1,72 @@
+<div class="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+
+    <!-- Items per page selector -->
+    <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-700 dark:text-gray-300">Items per page:</span>
+        <select
+                [value]="paginationSignal().size"
+                (change)="onSizeChange($event)"
+                class="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="25">25</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+        </select>
+    </div>
+
+    <!-- Page info and navigation -->
+    <div class="flex items-center gap-4">
+        <!-- Range display -->
+        <span class="text-sm text-gray-700 dark:text-gray-300">
+      {{ getPageRangeLabel() }}
+    </span>
+
+        <!-- Navigation buttons -->
+        <div class="flex items-center gap-1">
+            <!-- First page -->
+            <button
+                    (click)="goToFirstPage()"
+                    [disabled]="isFirstPage()"
+                    class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    [class.cursor-pointer]="!isFirstPage()">
+                <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.41 16.59L13.82 12l4.59-4.59L17 6l-6 6 6 6zM6 6h2v12H6z"/>
+                </svg>
+            </button>
+
+            <!-- Previous page -->
+            <button
+                    (click)="goToPreviousPage()"
+                    [disabled]="isFirstPage()"
+                    class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    [class.cursor-pointer]="!isFirstPage()">
+                <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+            </button>
+
+            <!-- Next page -->
+            <button
+                    (click)="goToNextPage()"
+                    [disabled]="isLastPage()"
+                    class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    [class.cursor-pointer]="!isLastPage()">
+                <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+            </button>
+
+            <!-- Last page -->
+            <button
+                    (click)="goToLastPage()"
+                    [disabled]="isLastPage()"
+                    class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    [class.cursor-pointer]="!isLastPage()">
+                <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>

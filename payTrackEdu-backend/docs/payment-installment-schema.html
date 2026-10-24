@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>payTrackEdu – Payment & Installment Database Schema</title>
+  <style>
+    @page { size: A4 landscape; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #17233b; font-size: 10pt; margin: 0; }
+    h1 { font-size: 25pt; margin: 0 0 4px; color: #133c67; }
+    h2 { font-size: 15pt; margin: 13px 0 7px; color: #0d5f79; border-bottom: 2px solid #b9dce8; padding-bottom: 4px; }
+    h3 { font-size: 11pt; margin: 0; }
+    p { line-height: 1.35; margin: 5px 0; }
+    .sub { color: #526176; font-size: 11pt; }
+    .note { border-left: 5px solid #e29335; background: #fff7e8; padding: 9px 11px; margin: 11px 0; }
+    .good { border-left: 5px solid #168269; background: #eaf8f3; padding: 9px 11px; margin: 10px 0; }
+    .page { page-break-after: always; min-height: 180mm; }
+    .page:last-child { page-break-after: auto; }
+    .legend { display: flex; gap: 15px; font-size: 9pt; margin: 8px 0 10px; }
+    .key { display: inline-block; border-radius: 3px; padding: 2px 6px; font-weight: bold; }
+    .pk { background: #dceeff; color: #07578b; } .fk { background: #f3e3ff; color: #67368d; } .soft { background: #ffe9e8; color: #a3423e; }
+    .schema { position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto auto; gap: 20px 30px; padding: 12px 5px; }
+    .entity { border: 1.4px solid #537da6; border-radius: 7px; overflow: hidden; background: white; box-shadow: 0 1px 3px #b8c5d180; position: relative; z-index: 1; }
+    .entity h3 { background: #e8f2fb; padding: 7px 9px; color: #164f81; }
+    .entity ul { list-style: none; padding: 5px 9px 7px; margin: 0; line-height: 1.48; }
+    .entity li { border-bottom: 1px solid #edf1f5; padding: 1px 0; }
+    .entity li:last-child { border: 0; }
+    .tag { font-size: 7.5pt; padding: 1px 4px; border-radius: 3px; margin-right: 3px; font-weight: bold; }
+    .tag.pk { background: #dceeff; } .tag.fk { background: #f3e3ff; } .tag.soft { background: #ffe9e8; }
+    .muted { color: #65758a; }
+    .flow { display: grid; grid-template-columns: 1fr 42px 1fr 42px 1fr 42px 1fr; align-items: center; margin: 15px 0; }
+    .flow-box { border: 1.5px solid #5281aa; border-radius: 7px; padding: 11px; min-height: 82px; background: #f8fbfe; }
+    .arrow { font-size: 24pt; text-align: center; color: #2781a2; }
+    .bad { background: #fff1f0; border-color: #d37671; }
+    .step { display: grid; grid-template-columns: 32px 1fr; gap: 8px; margin: 8px 0; align-items: start; }
+    .number { width: 25px; height: 25px; border-radius: 50%; text-align: center; padding-top: 4px; background: #0d718d; color: white; font-weight: bold; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th { text-align: left; background: #e8f2fb; color: #164f81; }
+    th, td { border: 1px solid #c8d9e7; padding: 7px; vertical-align: top; }
+    code { font-family: Consolas, monospace; font-size: 8.5pt; color: #7a2746; }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <h1>Payment & Installment Database Schema</h1>
+    <div class="sub">payTrackEdu backend • Generated from the JPA entity model • October 2026</div>
+    <div class="note"><strong>The important idea:</strong> a payment-plan installment is a reusable <em>template</em>. An enrollment installment is a student-specific <em>snapshot</em> created from that template. They are stored in different tables and are not directly linked.</div>
+    <div class="legend"><span><span class="key pk">PK</span> primary key</span><span><span class="key fk">FK</span> foreign key</span><span><span class="key soft">soft delete</span> record is hidden, not physically removed</span></div>
+    <h2>Core relationship diagram</h2>
+    <div class="schema">
+      <article class="entity"><h3>academic_year</h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li>code, start_date, end_date</li><li>status</li><li><span class="tag soft">soft delete</span> is_deleted, deleted_at</li></ul></article>
+      <article class="entity"><h3>promotion</h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li>code, name, active</li><li><span class="tag soft">soft delete</span> is_deleted, deleted_at</li></ul></article>
+      <article class="entity"><h3>student</h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li>first_name, last_name, email</li><li>phones, birthday, parent contact</li><li><span class="tag soft">soft delete</span> is_deleted, deleted_at</li></ul></article>
+      <article class="entity"><h3>promotion_session</h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li><span class="tag fk">FK</span> academic_year_id → academic_year</li><li><span class="tag fk">FK</span> promotion_id → promotion</li><li>code, registration_fee, status</li><li>Unique: (academic_year_id, promotion_id)</li></ul></article>
+      <article class="entity"><h3>payment_plan</h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li><span class="tag fk">FK</span> promotion_session_id → promotion_session</li><li>code, plan, total_amount</li><li>Unique: (promotion_session_id, plan)</li><li><span class="tag soft">soft delete</span> is_deleted, deleted_at</li></ul></article>
+      <article class="entity"><h3>enrollment</h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li><span class="tag fk">FK</span> student_id → student</li><li><span class="tag fk">FK</span> promotion_session_id → promotion_session</li><li><span class="tag fk">FK</span> payment_plan_id → payment_plan</li><li>registration_fee_amount, tuition_amount</li><li>discount_amount, status</li></ul></article>
+      <article class="entity"><h3>payment_plan_installment <span class="muted">(template)</span></h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li><span class="tag fk">FK</span> payment_plan_id → payment_plan</li><li>sequence_number, type</li><li>amount, due_date</li><li><span class="tag soft">soft delete</span> is_deleted, deleted_at</li><li>Rules: unique sequence; active amounts ≤ plan total</li></ul></article>
+      <article class="entity"><h3>enrollment_installment <span class="muted">(student snapshot)</span></h3><ul><li><span class="tag pk">PK</span> id : UUID</li><li><span class="tag fk">FK</span> enrollment_id → enrollment</li><li>sequence_number, type, label</li><li>expected_amount, due_date, status</li><li><span class="tag soft">soft delete</span> is_deleted, deleted_at</li></ul></article>
+      <article class="entity"><h3>payment + payment_allocation</h3><ul><li><b>payment</b>: <span class="tag fk">FK</span> enrollment_id → enrollment</li><li><b>payment_allocation</b>: <span class="tag fk">FK</span> payment_id → payment</li><li><span class="tag fk">FK</span> enrollment_installment_id → enrollment_installment</li><li>allocation amount is the amount applied</li></ul></article>
+    </div>
+    <p class="muted"><strong>Every table also inherits audit fields:</strong> created_at, created_by, updated_at, updated_by.</p>
+  </section>
+
+  <section class="page">
+    <h1>Why the old installment remains</h1>
+    <div class="sub">Current behavior in the application</div>
+    <div class="flow">
+      <div class="flow-box"><b>1. Create plan</b><br>Payment plan and its template installments are created.</div><div class="arrow">→</div>
+      <div class="flow-box"><b>2. Create enrollment</b><br><code>generateForEnrollment()</code> copies the registration fee and plan templates into student installments.</div><div class="arrow">→</div>
+      <div class="flow-box bad"><b>3. Delete template</b><br>The template has <code>is_deleted = true</code>. The copied student installment does not change.</div><div class="arrow">→</div>
+      <div class="flow-box bad"><b>4. Update enrollment</b><br>Only <code>enrollment.payment_plan_id</code> and amounts are changed. Existing enrollment installments stay.</div>
+    </div>
+    <h2>There is no database relationship between these two records</h2>
+    <table>
+      <tr><th>Template record</th><th>Created student record</th><th>What happens after template deletion</th></tr>
+      <tr><td><code>payment_plan_installment.id</code><br>Plan: Monthly<br>Tuition 1: 10,000</td><td><code>enrollment_installment.id</code><br>Student: Ahmed<br>Tuition 1: 10,000</td><td>The template is soft-deleted, but Ahmed's separate record is still active and returned by the API.</td></tr>
+    </table>
+    <div class="note"><strong>Important:</strong> <code>EnrollmentInstallment</code> stores only <code>enrollment_id</code>; it does not store <code>payment_plan_installment_id</code>. Therefore JPA/database cascade cannot automatically know which student installment should be changed when a template changes.</div>
+    <h2>Where this happens in the code</h2>
+    <table>
+      <tr><th>File / method</th><th>Current behavior</th><th>Effect</th></tr>
+      <tr><td><code>EnrollmentService.create()</code></td><td>Creates enrollment, then calls <code>generateForEnrollment(id)</code>.</td><td>Initial student installments are correctly copied.</td></tr>
+      <tr><td><code>EnrollmentInstallmentService.buildInstallments()</code></td><td>Reads active plan templates and creates new independent student installments.</td><td>It creates a snapshot, not a live link.</td></tr>
+      <tr><td><code>PaymentPlanInstallmentService.delete()</code></td><td>Sets only the template’s <code>deleted</code> flag.</td><td>Existing enrollments are unaffected.</td></tr>
+      <tr><td><code>EnrollmentService.update()</code></td><td>Changes enrollment fields but does not cancel, delete, or regenerate enrollment installments.</td><td>The old student schedule remains visible.</td></tr>
+      <tr><td><code>generateForEnrollment()</code></td><td>Refuses to run if non-cancelled student installments already exist.</td><td>Simply calling it after an update will result in a conflict.</td></tr>
+    </table>
+  </section>
+
+  <section class="page">
+    <h1>Implemented safe behavior</h1>
+    <div class="good"><strong>Rule now applied:</strong> when a payment-plan installment is created, updated, deleted, or restored, the schedules of all affected enrollments with no active payment allocation are rebuilt from the current plan templates. An enrollment that already has allocated payments is never changed automatically.</div>
+    <h2>Safe update workflow</h2>
+    <div class="step"><div class="number">1</div><div>Load the enrollment and detect whether <code>request.paymentPlanId()</code> differs from the current payment plan ID. If it is the same plan, do not rebuild the schedule.</div></div>
+    <div class="step"><div class="number">2</div><div>Load all existing <code>enrollment_installment</code> rows with a lock. Check whether any has a <code>payment_allocation</code> (or a paid amount above zero).</div></div>
+    <div class="step"><div class="number">3</div><div>If payments exist, reject the plan change with HTTP 409 and a clear message. This protects financial history and avoids orphaning payment allocations.</div></div>
+    <div class="step"><div class="number">4</div><div>If there are no payments, soft-delete or cancel all current enrollment installments. Do this in the same transaction as the enrollment update.</div></div>
+    <div class="step"><div class="number">5</div><div>Save the new payment plan and amounts on the enrollment, then generate a new set of enrollment installments from the current active templates.</div></div>
+    <div class="step"><div class="number">6</div><div>Return the enrollment and retrieve its installments again. The API should now return only the new active schedule.</div></div>
+    <h2>Data integrity rules to keep</h2>
+    <table>
+      <tr><th>Rule</th><th>Reason</th></tr>
+      <tr><td>Do not delete an enrollment installment physically when it has payment allocations.</td><td><code>payment_allocation.enrollment_installment_id</code> depends on it; payment history must remain auditable.</td></tr>
+      <tr><td>Use soft delete (<code>is_deleted = true</code>) for unpaid old installments.</td><td>The application already uses soft deletion and its queries filter on <code>deleted = false</code>.</td></tr>
+      <tr><td>Regenerate only after old rows are made inactive.</td><td><code>generateForEnrollment()</code> deliberately prevents duplicate active schedules.</td></tr>
+      <tr><td>Do not rebuild an enrollment with active payment allocations.</td><td>Its schedule is financial history. A template change still applies to unpaid enrollments and future enrollments.</td></tr>
+      <tr><td>The sum of active plan installments cannot exceed <code>payment_plan.total_amount</code>.</td><td>A fourth 3,000 installment is rejected when the plan total is 9,000. The plan total also cannot be lowered below its current active installment total.</td></tr>
+    </table>
+    <h2>Implemented service methods and endpoint</h2>
+    <p><code>EnrollmentInstallmentService.synchronizeEnrollmentInstallments(enrollmentId)</code> replaces one unpaid schedule. <code>synchronizeUnpaidEnrollmentsForPaymentPlan(paymentPlanId)</code> is invoked after every plan-installment change. Updating an enrollment to a different plan also synchronizes its schedule.</p>
+    <p>The frontend can manually request a refresh with <code>POST /api/enrollment-installments/enrollment/{enrollmentId}/synchronize</code>. It returns HTTP 409 if the enrollment has active payment allocations.</p>
+    <p class="muted">This change uses the existing schema; it adds service logic only.</p>
+  </section>
+</body>
+</html>

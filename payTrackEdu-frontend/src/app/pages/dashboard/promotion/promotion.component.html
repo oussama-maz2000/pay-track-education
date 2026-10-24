@@ -1,0 +1,432 @@
+<section class="space-y-6 pb-8">
+  <header
+    class="relative overflow-hidden rounded-3xl bg-emerald-950 px-6 py-8 text-white shadow-2xl shadow-emerald-950/15 sm:px-8"
+  >
+    <div
+      class="absolute inset-0 opacity-25"
+      style="
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+        background-size: 28px 28px;
+      "
+    ></div>
+    <div
+      class="absolute -right-20 -top-24 size-72 rounded-full bg-amber-300/20 blur-3xl"
+    ></div>
+    <div
+      class="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div class="max-w-2xl">
+        <p
+          class="flex items-center gap-2 text-xs font-semibold tracking-[.22em] text-amber-200 uppercase"
+        >
+          <span class="size-2 rounded-full bg-amber-200"></span>Cohort ledger
+        </p>
+        <h1
+          class="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl"
+        >
+          Des promotions clairement organisées.
+        </h1>
+        <p class="mt-3 text-sm leading-6 text-emerald-100/75 sm:text-base">
+          Maintain each student cohort from one dependable register.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="openCreateForm()"
+        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 text-sm font-semibold text-emerald-950 shadow-lg shadow-amber-300/15 transition hover:-translate-y-0.5 hover:bg-amber-200 focus:outline-hidden focus:ring-3 focus:ring-amber-200/40"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+        Nouvelle promotion
+      </button>
+    </div>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <article
+      class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+    >
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+        Promotions enregistrées
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ totalPromotions() }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Sur toutes les pages
+      </p>
+    </article>
+    <article
+      class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 shadow-theme-xs dark:border-emerald-500/15 dark:bg-emerald-500/5"
+    >
+      <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+        Active on this page
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-emerald-900 dark:text-emerald-100"
+      >
+        {{ activePromotionsOnPage() }}
+      </p>
+      <p class="mt-1 text-xs text-emerald-700/75 dark:text-emerald-300/70">
+        Available cohorts in this result set
+      </p>
+    </article>
+  </div>
+
+  <div
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+  >
+    <div
+      class="flex flex-col gap-4 border-b border-gray-100 p-5 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Promotion register
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Consultez, modifiez, archivez ou restaurez chaque promotion.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <select
+          (change)="onActiveFilterChange($event)"
+          class="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 outline-hidden focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <option value="all">Tous les statuts</option>
+          <option value="active">Active</option>
+          <option value="archived">Archivée</option>
+        </select>
+        <button
+          type="button"
+          (click)="refreshPromotions()"
+          [disabled]="promotionStore.loadingPromotion()"
+          class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+        >
+          Actualiser
+        </button>
+      </div>
+    </div>
+
+    @if (promotionStore.error()) {
+      <div
+        class="mx-5 mt-5 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ promotionStore.error() }}
+      </div>
+    }
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-185 text-left">
+        <thead
+          class="bg-gray-50/80 text-xs font-semibold tracking-[.1em] text-gray-500 uppercase dark:bg-gray-900/60 dark:text-gray-400"
+        >
+          <tr>
+            <th class="px-5 py-4">Promotion</th>
+            <th class="px-5 py-4">Statut</th>
+            <th class="px-5 py-4">Créée le</th>
+            <th class="px-5 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @if (promotionStore.loadingPromotion()) {
+            @for (row of [1, 2, 3]; track row) {
+              <tr class="animate-pulse">
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-44 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-6 w-20 rounded-full bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-28 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td></td>
+              </tr>
+            }
+          } @else {
+            @for (promotion of filteredPromotions(); track promotion.id) {
+              <tr
+                class="group transition hover:bg-slate-50/70 dark:hover:bg-white/[.02]"
+              >
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <span
+                      class="grid size-10 place-items-center rounded-xl bg-emerald-50 font-mono text-xs font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                      >PR</span
+                    >
+                    <div>
+                      <p class="font-semibold text-gray-900 dark:text-white">
+                        {{ promotion.name }}
+                      </p>
+                      <p
+                        class="mt-0.5 text-xs text-gray-500 dark:text-gray-400"
+                      >
+                        {{ promotion.code }} · Created by
+                        {{ promotion.createdBy || 'System' }}
+                      </p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    [class]="
+                      'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+                      (promotion.active
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+                        : 'border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300')
+                    "
+                    >{{ promotion.active ? 'Active' : 'Archived' }}</span
+                  >
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  {{ promotion.createdAt | date: 'dd MMM yyyy' }}
+                </td>
+                <td class="px-5 py-4">
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      (click)="openEditForm(promotion)"
+                      [disabled]="promotionStore.savingPromotion()"
+                      class="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                    >
+                      Edit
+                    </button>
+                    @if (promotion.active) {
+                      <button
+                        type="button"
+                        (click)="openDeleteDialog(promotion)"
+                        [disabled]="promotionStore.savingPromotion()"
+                        class="rounded-lg px-3 py-2 text-xs font-semibold text-error-600 transition hover:bg-error-50 disabled:opacity-50 dark:text-error-400"
+                      >
+                        Archive
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        (click)="restorePromotion(promotion)"
+                        [disabled]="promotionStore.savingPromotion()"
+                        class="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:bg-emerald-500/10 dark:text-emerald-300"
+                      >
+                        Restore
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="px-5 py-16 text-center">
+                  <div
+                    class="mx-auto grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                  >
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M4 19.5V7.8c0-.7.4-1.3 1-1.6l6-3.1c.6-.3 1.4-.3 2 0l6 3.1c.6.3 1 1 1 1.6v11.7M3 20.5h18M8 10h8m-8 4h8"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <h3 class="mt-4 font-semibold text-gray-900 dark:text-white">
+                    Aucune promotion trouvée
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Try a different filter or register the first cohort.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="openCreateForm()"
+                    class="mt-5 text-sm font-semibold text-brand-600 dark:text-brand-400"
+                  >
+                    Créer une promotion
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [paginationSignal]="promotionStore.pagination"
+      (onPageChange)="onPromotionsPageChange($event)"
+    />
+  </div>
+</section>
+
+<app-modal
+  [isOpen]="isFormOpen()"
+  (close)="closeForm()"
+  className="max-w-xl mx-4"
+>
+  <form
+    [formGroup]="promotionForm"
+    (ngSubmit)="submitPromotion()"
+    class="p-6 sm:p-8"
+  >
+    <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+      <p
+        class="text-xs font-semibold tracking-[.18em] text-emerald-700 uppercase dark:text-emerald-300"
+      >
+        Détails de la promotion
+      </p>
+      <h2
+        class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{
+          editingPromotion() ? 'Modifier la promotion' : 'Créer une promotion'
+        }}
+      </h2>
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        Give this cohort a recognisable code, name, and current availability.
+      </p>
+    </div>
+    <div class="mt-6 grid gap-5 sm:grid-cols-2">
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Code de la promotion</span
+        ><input
+          formControlName="code"
+          type="text"
+          placeholder="e.g. L1-2026"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            promotionForm.controls.code.invalid &&
+            promotionForm.controls.code.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            promotionForm.controls.code.invalid &&
+            promotionForm.controls.code.touched
+          ) {
+            A code is required (maximum 40 characters).
+          }
+        </span></label
+      >
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Nom de la promotion</span
+        ><input
+          formControlName="name"
+          type="text"
+          placeholder="e.g. Computer Science 2026"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            promotionForm.controls.name.invalid &&
+            promotionForm.controls.name.touched
+          "
+        /><span class="mt-1.5 block text-xs text-error-500">
+          @if (
+            promotionForm.controls.name.invalid &&
+            promotionForm.controls.name.touched
+          ) {
+            A name is required (maximum 120 characters).
+          }
+        </span></label
+      >
+      <label
+        class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-4 sm:col-span-2 dark:border-gray-700"
+        ><input
+          formControlName="active"
+          type="checkbox"
+          class="size-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+        /><span
+          ><span
+            class="block text-sm font-medium text-gray-800 dark:text-gray-100"
+            >Promotion active</span
+          ><span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-400"
+            >Inactive promotions remain archived until restored.</span
+          ></span
+        ></label
+      >
+    </div>
+    <div
+      class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end dark:border-gray-800"
+    >
+      <button
+        type="button"
+        (click)="closeForm()"
+        [disabled]="promotionStore.savingPromotion()"
+        class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="submit"
+        [disabled]="promotionStore.savingPromotion()"
+        class="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-700 disabled:opacity-60"
+      >
+        {{
+          promotionStore.savingPromotion()
+            ? 'Enregistrement…'
+            : editingPromotion()
+              ? 'Enregistrer les modifications'
+              : 'Créer une promotion'
+        }}
+      </button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="isDeleteDialogOpen()"
+  (close)="closeDeleteDialog()"
+  className="max-w-md mx-4"
+>
+  <div class="p-7 text-center">
+    <div
+      class="mx-auto grid size-14 place-items-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300"
+    >
+      <svg class="size-7" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 7h14m-9 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+    <h2 class="mt-5 text-xl font-semibold text-gray-900 dark:text-white">
+      Archiver cette promotion ?
+    </h2>
+    <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+      {{ promotionPendingDeletion()?.name }} will be marked inactive. You can
+      restore it later.
+    </p>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeDeleteDialog()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="button"
+        (click)="deletePromotion()"
+        [disabled]="promotionStore.savingPromotion()"
+        class="h-11 flex-1 rounded-xl bg-error-600 text-sm font-semibold text-white transition hover:bg-error-700 disabled:opacity-60"
+      >
+        Archive
+      </button>
+    </div>
+  </div>
+</app-modal>

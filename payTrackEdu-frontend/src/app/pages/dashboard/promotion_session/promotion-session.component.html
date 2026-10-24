@@ -1,0 +1,595 @@
+<section class="space-y-6 pb-8">
+  <header
+    class="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-2xl shadow-slate-950/15 sm:px-8"
+  >
+    <div
+      class="absolute inset-0 opacity-25"
+      style="
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+        background-size: 28px 28px;
+      "
+    ></div>
+    <div
+      class="absolute -right-20 -top-28 size-72 rounded-full bg-cyan-400/25 blur-3xl"
+    ></div>
+    <div
+      class="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div class="max-w-2xl">
+        <p
+          class="flex items-center gap-2 text-xs font-semibold tracking-[.22em] text-cyan-200 uppercase"
+        >
+          <span class="size-2 rounded-full bg-cyan-200"></span>Session register
+        </p>
+        <h1
+          class="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl"
+        >
+          Every cohort, ready to enrol.
+        </h1>
+        <p class="mt-3 text-sm leading-6 text-slate-300 sm:text-base">
+          Connect an academic year to a promotion, then set its registration
+          terms and lifecycle.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="openCreateForm()"
+        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-cyan-200 px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-300/15 transition hover:-translate-y-0.5 hover:bg-cyan-100 focus:outline-hidden focus:ring-3 focus:ring-cyan-200/40"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          /></svg
+        >Nouvelle session de promotion
+      </button>
+    </div>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <article
+      class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+    >
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+        Registered sessions
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ totalPromotionSessions() }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Sur toutes les pages
+      </p>
+    </article>
+    <article
+      class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 shadow-theme-xs dark:border-emerald-500/15 dark:bg-emerald-500/5"
+    >
+      <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+        Open on this page
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-emerald-900 dark:text-emerald-100"
+      >
+        {{ openPromotionSessionsOnPage() }}
+      </p>
+      <p class="mt-1 text-xs text-emerald-700/75 dark:text-emerald-300/70">
+        Currently available for registration
+      </p>
+    </article>
+  </div>
+
+  <div
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+  >
+    <div
+      class="flex flex-col gap-4 border-b border-gray-100 p-5 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Sessions de promotion
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Gérez les frais d’inscription et la disponibilité de chaque promotion.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <select
+          (change)="onStatusFilterChange($event)"
+          class="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 outline-hidden focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <option value="all">Tous les statuts</option>
+          @for (status of statusOptions; track status.value) {
+            <option [value]="status.value">{{ status.label }}</option>
+          }</select
+        ><button
+          type="button"
+          (click)="refreshPromotionSessions()"
+          [disabled]="promotionSessionStore.loadingPromotionSession()"
+          class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+        >
+          Actualiser
+        </button>
+      </div>
+    </div>
+
+    @if (promotionSessionStore.error()) {
+      <div
+        class="mx-5 mt-5 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ promotionSessionStore.error() }}
+      </div>
+    }
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-220 text-left">
+        <thead
+          class="bg-gray-50/80 text-xs font-semibold tracking-[.1em] text-gray-500 uppercase dark:bg-gray-900/60 dark:text-gray-400"
+        >
+          <tr>
+            <th class="px-5 py-4">Année universitaire</th>
+            <th class="px-5 py-4">Promotion</th>
+            <th class="px-5 py-4">Frais d’inscription</th>
+            <th class="px-5 py-4">Statut</th>
+            <th class="px-5 py-4">Créé par</th>
+            <th class="px-5 py-4">Créé le</th>
+            <th class="px-5 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @if (promotionSessionStore.loadingPromotionSession()) {
+            @for (row of [1, 2, 3]; track row) {
+              <tr class="animate-pulse">
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-24 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-36 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-6 w-20 rounded-full bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-24 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-28 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td></td>
+              </tr>
+            }
+          } @else {
+            @for (
+              promotionSession of filteredPromotionSessions();
+              track promotionSession.id
+            ) {
+              <tr
+                class="group transition hover:bg-slate-50/70 dark:hover:bg-white/[.02]"
+              >
+                <td class="px-5 py-4">
+                  <span class="font-semibold text-gray-900 dark:text-white">{{
+                    promotionSession.academicYearCode
+                  }}</span>
+                </td>
+                <td class="px-5 py-4">
+                  <p class="font-semibold text-gray-900 dark:text-white">
+                    {{ promotionSession.promotionName }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ promotionSession.promotionCode }}
+                  </p>
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-semibold text-gray-700 dark:text-gray-200"
+                >
+                  {{
+                    promotionSession.registrationFee
+                      | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+                  }}
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    [class]="
+                      'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ' +
+                      statusClasses(promotionSession.status)
+                    "
+                    >{{ statusLabel(promotionSession.status) }}</span
+                  >
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  {{ promotionSession.createdBy || 'System' }}
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  {{ promotionSession.createdAt | date: 'dd MMM yyyy' }}
+                </td>
+                <td class="px-5 py-4">
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      (click)="openEditForm(promotionSession)"
+                      [disabled]="
+                        promotionSessionStore.savingPromotionSession()
+                      "
+                      class="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                    >
+                      Edit
+                    </button>
+                    @if (
+                      promotionSession.status ===
+                      PromotionSessionStatus.ARCHIVED
+                    ) {
+                      <button
+                        type="button"
+                        (click)="restorePromotionSession(promotionSession)"
+                        [disabled]="
+                          promotionSessionStore.savingPromotionSession()
+                        "
+                        class="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50 dark:bg-emerald-500/10 dark:text-emerald-300"
+                      >
+                        Restore
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        (click)="openDeleteDialog(promotionSession)"
+                        [disabled]="
+                          promotionSessionStore.savingPromotionSession()
+                        "
+                        class="rounded-lg px-3 py-2 text-xs font-semibold text-error-600 transition hover:bg-error-50 disabled:opacity-50 dark:text-error-400"
+                      >
+                        Archive
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="px-5 py-16 text-center">
+                  <div
+                    class="mx-auto grid size-12 place-items-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M4 19.5V7.8c0-.7.4-1.3 1-1.6l6-3.1c.6-.3 1.4-.3 2 0l6 3.1c.6.3 1 1 1 1.6v11.7M3 20.5h18M8 10h8m-8 4h8"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <h3 class="mt-4 font-semibold text-gray-900 dark:text-white">
+                    Aucune session de promotion trouvée
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Create the first academic cohort registration.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="openCreateForm()"
+                    class="mt-5 text-sm font-semibold text-brand-600 dark:text-brand-400"
+                  >
+                    Créer une session de promotion
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [paginationSignal]="promotionSessionStore.pagination"
+      (onPageChange)="onPromotionSessionsPageChange($event)"
+    />
+  </div>
+</section>
+
+<app-modal
+  [isOpen]="isFormOpen()"
+  (close)="closeForm()"
+  className="max-w-2xl mx-4"
+  ><form
+    [formGroup]="promotionSessionForm"
+    (ngSubmit)="submitPromotionSession()"
+    class="p-6 sm:p-8"
+  >
+    <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+      <p
+        class="text-xs font-semibold tracking-[.18em] text-cyan-700 uppercase dark:text-cyan-300"
+      >
+        Détails de la session
+      </p>
+      <h2
+        class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{
+          editingPromotionSession()
+            ? 'Modifier la session de promotion'
+            : 'Créer une session de promotion'
+        }}
+      </h2>
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        Choose the year and promotion from paginated lists, then define its
+        registration settings.
+      </p>
+    </div>
+    @if (pickerError()) {
+      <p
+        class="mt-4 rounded-lg bg-error-50 px-3 py-2 text-sm text-error-700 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ pickerError() }}
+      </p>
+    }
+    <div class="mt-6 grid gap-5 sm:grid-cols-2">
+      <div class="relative">
+        <span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Année universitaire</span
+        ><button
+          type="button"
+          (click)="toggleAcademicYearDropdown()"
+          [attr.aria-expanded]="isAcademicYearDropdownOpen()"
+          class="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3.5 text-left text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        >
+          <span
+            class="truncate"
+            [class.text-gray-400]="
+              !promotionSessionForm.controls.academicYearId.value
+            "
+            >{{ selectedAcademicYearLabel() }}</span
+          ><svg
+            class="size-4 shrink-0 text-gray-400"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path
+              d="m6 9 6 6 6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        @if (isAcademicYearDropdownOpen()) {
+          <div
+            role="listbox"
+            appInfiniteScroll
+            [infiniteScrollDisabled]="!canLoadNextAcademicYears()"
+            (infiniteScrollEnd)="loadNextAcademicYears()"
+            class="absolute z-20 mt-2 max-h-52 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+          >
+            @for (academicYear of academicYears(); track academicYear.id) {
+              @if (academicYear.status === 'ACTIVE') {
+                <button
+                  type="button"
+                  role="option"
+                  (click)="selectAcademicYear(academicYear)"
+                  class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-cyan-50 hover:text-cyan-900 dark:text-gray-200 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-100"
+                >
+                  <span>{{ academicYear.code }}</span
+                  ><span class="text-xs text-gray-400">{{
+                    academicYear.startDate | date: 'yyyy'
+                  }}</span>
+                </button>
+              }
+            }
+            @if (loadingAcademicYears()) {
+              <p class="px-3 py-2 text-xs text-gray-500">
+                Chargement d’autres années universitaires…
+              </p>
+            } @else if (!canLoadNextAcademicYears()) {
+              <p class="px-3 py-2 text-xs text-gray-400">
+                Fin des années universitaires
+              </p>
+            }
+          </div>
+        }
+        @if (
+          promotionSessionForm.controls.academicYearId.invalid &&
+          promotionSessionForm.controls.academicYearId.touched
+        ) {
+          <span class="mt-1.5 block text-xs text-error-500"
+            >An academic year is required.</span
+          >
+        }
+      </div>
+      <div class="relative">
+        <span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Promotion</span
+        ><button
+          type="button"
+          (click)="togglePromotionDropdown()"
+          [attr.aria-expanded]="isPromotionDropdownOpen()"
+          class="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3.5 text-left text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        >
+          <span
+            class="truncate"
+            [class.text-gray-400]="
+              !promotionSessionForm.controls.promotionId.value
+            "
+            >{{ selectedPromotionLabel() }}</span
+          ><svg
+            class="size-4 shrink-0 text-gray-400"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <path
+              d="m6 9 6 6 6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        @if (isPromotionDropdownOpen()) {
+          <div
+            role="listbox"
+            appInfiniteScroll
+            [infiniteScrollDisabled]="!canLoadNextPromotions()"
+            (infiniteScrollEnd)="loadNextPromotions()"
+            class="absolute z-20 mt-2 max-h-52 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+          >
+            @for (promotion of promotions(); track promotion.id) {
+              @if (promotion.active) {
+                <button
+                  type="button"
+                  role="option"
+                  (click)="selectPromotion(promotion)"
+                  class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-cyan-50 hover:text-cyan-900 dark:text-gray-200 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-100"
+                >
+                  <span class="truncate"
+                    >{{ promotion.code }} · {{ promotion.name }}</span
+                  >
+                </button>
+              }
+            }
+            @if (loadingPromotions()) {
+              <p class="px-3 py-2 text-xs text-gray-500">
+                Chargement d’autres promotions…
+              </p>
+            } @else if (!canLoadNextPromotions()) {
+              <p class="px-3 py-2 text-xs text-gray-400">Fin des promotions</p>
+            }
+          </div>
+        }
+        @if (
+          promotionSessionForm.controls.promotionId.invalid &&
+          promotionSessionForm.controls.promotionId.touched
+        ) {
+          <span class="mt-1.5 block text-xs text-error-500"
+            >A promotion is required.</span
+          >
+        }
+      </div>
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Frais d’inscription</span
+        ><input
+          formControlName="registrationFee"
+          type="number"
+          min="0"
+          step="0.01"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden transition focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          [class.border-error-500]="
+            promotionSessionForm.controls.registrationFee.invalid &&
+            promotionSessionForm.controls.registrationFee.touched
+          "
+        />
+        @if (
+          promotionSessionForm.controls.registrationFee.invalid &&
+          promotionSessionForm.controls.registrationFee.touched
+        ) {
+          <span class="mt-1.5 block text-xs text-error-500"
+            >Enter a non-negative registration fee.</span
+          >
+        }
+      </label>
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Statut du cycle de vie</span
+        ><select
+          formControlName="status"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 outline-hidden focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        >
+          @for (status of statusOptions; track status.value) {
+            <option [ngValue]="status.value">{{ status.label }}</option>
+          }
+        </select></label
+      >
+    </div>
+    <div
+      class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end dark:border-gray-800"
+    >
+      <button
+        type="button"
+        (click)="closeForm()"
+        [disabled]="promotionSessionStore.savingPromotionSession()"
+        class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="submit"
+        [disabled]="promotionSessionStore.savingPromotionSession()"
+        class="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-700 disabled:opacity-60"
+      >
+        {{
+          promotionSessionStore.savingPromotionSession()
+            ? 'Enregistrement…'
+            : editingPromotionSession()
+              ? 'Enregistrer les modifications'
+              : 'Créer une session de promotion'
+        }}
+      </button>
+    </div>
+  </form></app-modal
+>
+
+<app-modal
+  [isOpen]="isDeleteDialogOpen()"
+  (close)="closeDeleteDialog()"
+  className="max-w-md mx-4"
+  ><div class="p-7 text-center">
+    <div
+      class="mx-auto grid size-14 place-items-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300"
+    >
+      <svg class="size-7" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 7h14m-9 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+    <h2 class="mt-5 text-xl font-semibold text-gray-900 dark:text-white">
+      Archiver cette session ?
+    </h2>
+    <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+      {{ promotionSessionPendingDeletion()?.academicYearCode }} ·
+      {{ promotionSessionPendingDeletion()?.promotionName }} will be archived.
+      You can restore it later.
+    </p>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeDeleteDialog()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="button"
+        (click)="deletePromotionSession()"
+        [disabled]="promotionSessionStore.savingPromotionSession()"
+        class="h-11 flex-1 rounded-xl bg-error-600 text-sm font-semibold text-white transition hover:bg-error-700 disabled:opacity-60"
+      >
+        Archive
+      </button>
+    </div>
+  </div></app-modal
+>

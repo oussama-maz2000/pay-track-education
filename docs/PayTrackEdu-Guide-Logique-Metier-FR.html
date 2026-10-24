@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>PayTrackEdu - Guide de logique métier</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 18mm; }
+    * { box-sizing: border-box; }
+    body { color: #16243a; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.48; margin: 0; }
+    h1 { color: #113b68; font-size: 25pt; line-height: 1.15; margin: 0 0 6px; }
+    h2 { border-bottom: 2px solid #65b7a8; color: #113b68; font-size: 15pt; margin: 25px 0 9px; padding-bottom: 4px; page-break-after: avoid; }
+    h3 { color: #1d5a73; font-size: 11.5pt; margin: 14px 0 4px; page-break-after: avoid; }
+    p { margin: 6px 0; }
+    ul, ol { margin: 6px 0 10px; padding-left: 23px; }
+    li { margin: 3px 0; }
+    .subtitle { color: #54708b; font-size: 12pt; margin-bottom: 20px; }
+    .summary { background: #eef8f5; border-left: 5px solid #43a893; margin: 14px 0 18px; padding: 12px 15px; }
+    .flow { background: #f5f8fb; border: 1px solid #d8e4ef; border-radius: 6px; color: #173d61; font-weight: bold; line-height: 1.8; margin: 12px 0; padding: 13px 16px; text-align: center; }
+    .rule { background: #fff8e5; border-left: 4px solid #e5ad37; margin: 9px 0; padding: 8px 12px; }
+    .example { background: #f5f8fb; border-left: 4px solid #6994be; margin: 10px 0; padding: 9px 12px; }
+    table { border-collapse: collapse; margin: 10px 0; width: 100%; }
+    th { background: #163f68; color: white; text-align: left; }
+    th, td { border: 1px solid #d5e0ea; padding: 7px 9px; vertical-align: top; }
+    tr:nth-child(even) td { background: #f7fafc; }
+    .footer { color: #6d7d8e; font-size: 8.5pt; margin-top: 24px; }
+    .page-break { break-before: page; }
+  </style>
+</head>
+<body>
+  <h1>PayTrackEdu</h1>
+  <div class="subtitle">Guide de logique métier &mdash; gestion des inscriptions et des paiements de scolarité</div>
+
+  <div class="summary">
+    PayTrackEdu accompagne un établissement d'enseignement depuis la préparation de l'année académique jusqu'au suivi des paiements. L'application relie chaque encaissement à l'inscription de l'étudiant et conserve son historique financier.
+  </div>
+
+  <h2>1. Le cycle métier</h2>
+  <div class="flow">Année académique + promotion &rarr; session de promotion &rarr; plan de paiement &rarr; inscription &rarr; échéances &rarr; paiements &rarr; suivi du solde</div>
+  <p>L'établissement définit d'abord son offre de formation, puis inscrit les étudiants dans une offre précise pour une année académique donnée. Le plan de paiement choisi détermine ce que l'étudiant doit payer et les dates prévues. Chaque paiement reçu est affecté aux échéances restantes afin que le solde soit toujours visible.</p>
+
+  <h2>2. Préparation académique</h2>
+  <h3>Années académiques</h3>
+  <p>Une année académique possède un code unique, une date de début, une date de fin et un statut : Brouillon, Active, Clôturée ou Archivée. Sa date de fin ne peut pas être antérieure à sa date de début.</p>
+
+  <h3>Promotions</h3>
+  <p>Une promotion représente un programme, une classe ou une cohorte. Son code et son nom sont uniques. Une promotion peut être active ou inactive.</p>
+
+  <h3>Sessions de promotion</h3>
+  <p>Une session de promotion associe une promotion à une année académique. Par exemple, la promotion « Développement Web » peut avoir une session distincte pour l'année 2026-2027. Le système attribue automatiquement un code à cette session et enregistre ses frais d'inscription.</p>
+  <div class="rule"><strong>Règle métier :</strong> une même promotion ne peut avoir qu'une seule session active pour une année académique donnée.</div>
+  <p>Une session évolue entre les statuts Brouillon, Ouverte, Clôturée et Archivée. Ces statuts indiquent si elle est en préparation, ouverte aux inscriptions, fermée ou conservée pour l'historique.</p>
+
+  <h2>3. Étudiants et inscriptions</h2>
+  <h3>Fiches étudiants</h3>
+  <p>La fiche étudiant contient son identité, ses coordonnées, sa date de naissance et les contacts du parent. L'adresse e-mail d'un étudiant actif doit être unique. Les fiches sont archivées plutôt que supprimées définitivement afin de préserver l'historique et de pouvoir les restaurer.</p>
+
+  <h3>Création d'une inscription</h3>
+  <p>Une inscription relie exactement trois éléments : un étudiant, une session de promotion et un plan de paiement appartenant à cette même session. Elle est créée avec le statut <strong>Brouillon</strong>.</p>
+  <ol>
+    <li>Sélectionner un étudiant actif.</li>
+    <li>Sélectionner la session de promotion de l'année concernée.</li>
+    <li>Sélectionner un plan de paiement de cette session.</li>
+    <li>Saisir, si besoin, une remise et son motif.</li>
+    <li>Le système enregistre les frais d'inscription de la session et le montant de formation du plan.</li>
+    <li>Le système génère automatiquement les échéances de l'inscription.</li>
+  </ol>
+  <div class="rule"><strong>Règles métier :</strong> un étudiant ne peut pas avoir deux inscriptions actives dans la même session ; un plan d'une autre session ne peut pas être choisi ; une remise ne peut pas dépasser le total frais d'inscription + scolarité.</div>
+
+  <h3>Statuts d'une inscription</h3>
+  <table>
+    <thead><tr><th>Statut</th><th>Signification</th></tr></thead>
+    <tbody>
+      <tr><td>Brouillon</td><td>L'inscription est préparée mais n'est pas encore active.</td></tr>
+      <tr><td>Active</td><td>L'étudiant est actuellement inscrit et des paiements peuvent être enregistrés.</td></tr>
+      <tr><td>Suspendue</td><td>L'inscription est temporairement mise en pause.</td></tr>
+      <tr><td>Annulée</td><td>L'inscription n'est plus valable ; aucun nouveau paiement ne peut y être créé.</td></tr>
+      <tr><td>Terminée</td><td>L'inscription est achevée. Elle ne peut plus être activée, suspendue ou annulée.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. Plans de paiement et échéances</h2>
+  <p>Un plan de paiement définit la manière de régler la scolarité d'une session de promotion. Les types pris en charge sont Comptant, Trimestriel et Mensuel. Chaque plan possède un montant total de scolarité et une ou plusieurs échéances datées.</p>
+  <p>Une échéance de plan est soit un <strong>acompte</strong>, soit une échéance de <strong>scolarité</strong>. Son numéro de séquence doit être unique dans le plan pour définir clairement l'ordre de paiement.</p>
+
+  <h3>Création du calendrier personnel de l'étudiant</h3>
+  <p>Lorsqu'une inscription est créée, PayTrackEdu génère un calendrier personnel :</p>
+  <ul>
+    <li>Une première échéance correspondant aux frais d'inscription est créée à la date du jour.</li>
+    <li>Chaque échéance du plan sélectionné est copiée avec son montant et sa date d'échéance.</li>
+    <li>Les échéances de scolarité sont numérotées dans l'ordre, par exemple « Scolarité 1 » et « Scolarité 2 ».</li>
+  </ul>
+  <div class="rule"><strong>Application de la remise :</strong> la remise réduit d'abord la dernière échéance de scolarité, puis les précédentes en remontant. Si elle dépasse la scolarité, le reste réduit les frais d'inscription. Une échéance ne peut jamais devenir négative.</div>
+  <p>Le personnel peut modifier la date d'une échéance non annulée ou annuler une échéance. Une échéance annulée n'est plus incluse dans le montant restant à payer.</p>
+
+  <div class="page-break"></div>
+  <h2>5. Paiements et affectation automatique</h2>
+  <p>Un paiement est enregistré sur une inscription. Il comprend son montant, sa date, son mode de paiement (Espèces, Chèque ou Virement bancaire), une référence facultative, des notes facultatives et un numéro de reçu généré automatiquement.</p>
+  <div class="rule"><strong>Règles métier :</strong> un paiement doit être strictement positif, ne peut pas être enregistré sur une inscription annulée et ne peut pas dépasser le solde restant de l'inscription.</div>
+
+  <h3>Affectation automatique</h3>
+  <p>Dès qu'un paiement est créé, le système l'affecte automatiquement aux échéances non annulées et impayées dans leur ordre. Il règle d'abord la plus ancienne échéance non réglée, puis continue avec les suivantes jusqu'à épuisement du paiement ou du solde.</p>
+  <div class="example"><strong>Exemple :</strong> s'il reste 100 à payer pour les frais d'inscription et 250 pour Scolarité 1, un paiement de 220 est réparti ainsi : 100 sur les frais d'inscription et 120 sur Scolarité 1. Le paiement est entièrement affecté ; il reste 130 à payer sur Scolarité 1.</div>
+
+  <h3>Affectation manuelle</h3>
+  <p>Le personnel peut également affecter une partie d'un paiement à une échéance précise. Le paiement et l'échéance doivent appartenir à la même inscription. Le montant affecté ne peut dépasser ni la partie non affectée du paiement ni le solde de l'échéance.</p>
+
+  <h3>Statut d'une échéance</h3>
+  <table>
+    <thead><tr><th>Statut</th><th>Quand il s'applique</th></tr></thead>
+    <tbody>
+      <tr><td>En attente</td><td>Aucun paiement actif n'a été affecté et la date d'échéance n'est pas dépassée.</td></tr>
+      <tr><td>Partiellement payée</td><td>Une partie du montant attendu a été réglée, mais pas la totalité.</td></tr>
+      <tr><td>Payée</td><td>Les affectations actives atteignent ou dépassent le montant attendu.</td></tr>
+      <tr><td>En retard</td><td>Un montant reste impayé après la date d'échéance.</td></tr>
+      <tr><td>Annulée</td><td>L'échéance est annulée et n'est plus exigible.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. Soldes, annulations et historique</h2>
+  <h3>Calcul des montants</h3>
+  <p>Pour chaque inscription, le système présente les montants suivants :</p>
+  <ul>
+    <li><strong>Montant total</strong> = frais d'inscription + montant de scolarité.</li>
+    <li><strong>Montant final</strong> = montant total - remise.</li>
+    <li><strong>Montant payé</strong> = affectations issues de paiements actifs uniquement.</li>
+    <li><strong>Montant restant</strong> = montant final - montant payé.</li>
+  </ul>
+  <p>Les échéances annulées ne font pas partie du calendrier encore exigible. L'établissement ne peut donc pas encaisser un montant qu'il a annulé.</p>
+
+  <h3>Annulation d'un paiement</h3>
+  <p>Un paiement n'est pas supprimé. Il est marqué comme annulé avec l'utilisateur qui l'a annulé, la date et le motif. Ses affectations ne comptent plus dans les totaux payés. Les statuts des échéances liées sont alors recalculés : une échéance précédemment payée peut redevenir partiellement payée, en attente ou en retard.</p>
+  <div class="rule"><strong>Règle métier :</strong> un paiement annulé ne peut plus être affecté.</div>
+
+  <h3>Conservation des données</h3>
+  <p>Les années académiques, promotions, sessions, étudiants, plans de paiement et échéances de plan sont archivés au lieu d'être effacés. Ils disparaissent des listes actives mais peuvent être restaurés. Les paiements conservent leur historique financier grâce à leur changement de statut plutôt qu'à une suppression.</p>
+
+  <h2>7. Utilisateurs et fonctionnement quotidien</h2>
+  <p>Le système identifie les utilisateurs Administrateur et Personnel. Un utilisateur connecté est nécessaire pour les fonctions métier protégées. Le déroulement quotidien typique est le suivant :</p>
+  <ol>
+    <li>Maintenir les années académiques, promotions, sessions et plans de paiement.</li>
+    <li>Créer ou mettre à jour les fiches étudiants.</li>
+    <li>Inscrire chaque étudiant dans une session avec le plan de paiement adapté et, si elle est approuvée, sa remise.</li>
+    <li>Contrôler le calendrier généré et modifier les dates d'échéance seulement lorsque cela est justifié.</li>
+    <li>Enregistrer chaque paiement reçu et utiliser le reçu généré comme référence.</li>
+    <li>Suivre les échéances impayées, partiellement payées et en retard ; annuler un paiement ou une échéance uniquement avec les informations requises.</li>
+  </ol>
+
+  <p class="footer">Document préparé à partir des règles actuelles de PayTrackEdu. Il décrit le comportement métier, sans détailler l'implémentation technique.</p>
+</body>
+</html>

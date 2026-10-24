@@ -1,0 +1,847 @@
+<section class="space-y-6 pb-8">
+  <header
+    class="relative overflow-hidden rounded-3xl bg-teal-950 px-6 py-8 text-white shadow-2xl shadow-teal-950/15 sm:px-8"
+  >
+    <div
+      class="absolute inset-0 opacity-25"
+      style="
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+        background-size: 28px 28px;
+      "
+    ></div>
+    <div
+      class="absolute -right-20 -top-28 size-72 rounded-full bg-lime-300/20 blur-3xl"
+    ></div>
+    <div
+      class="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div class="max-w-2xl">
+        <p
+          class="flex items-center gap-2 text-xs font-semibold tracking-[.22em] text-lime-200 uppercase"
+        >
+          <span class="size-2 rounded-full bg-lime-200"></span>Registre des admissions
+        </p>
+        <h1
+          class="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl"
+        >
+          Des inscriptions entièrement connectées.
+        </h1>
+        <p class="mt-3 text-sm leading-6 text-teal-100/75 sm:text-base">
+          Reliez étudiants, sessions universitaires et plans de paiement dans un
+          dossier unique et précis.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="openCreateForm()"
+        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-lime-300 px-4 text-sm font-semibold text-teal-950 shadow-lg shadow-lime-300/15 transition hover:-translate-y-0.5 hover:bg-lime-200"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          /></svg
+        >Nouvelle inscription
+      </button>
+    </div>
+  </header>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <article
+      class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+    >
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+        Inscriptions enregistrées
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ totalEnrollments() }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Sur toutes les pages
+      </p>
+    </article>
+    <article
+      class="rounded-2xl border border-teal-100 bg-teal-50/60 p-5 shadow-theme-xs dark:border-teal-500/15 dark:bg-teal-500/5"
+    >
+      <p class="text-sm font-medium text-teal-800 dark:text-teal-200">
+        Actives sur cette page
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-teal-900 dark:text-teal-100"
+      >
+        {{ activeEnrollmentsOnPage() }}
+      </p>
+      <p class="mt-1 text-xs text-teal-700/75 dark:text-teal-300/70">
+        Inscriptions actuellement actives
+      </p>
+    </article>
+  </div>
+  <div
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+  >
+    <div
+      class="flex flex-col gap-4 border-b border-gray-100 p-5 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Registre des inscriptions
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Consultez les statuts, les montants facturés et les soldes restants.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <label class="relative block min-w-56"
+          ><span class="sr-only">Search enrollments</span
+          ><svg
+            class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              cx="11"
+              cy="11"
+              r="6"
+              stroke="currentColor"
+              stroke-width="1.8"
+            />
+            <path
+              d="m16 16 4 4"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            /></svg
+          ><input
+            type="search"
+            [value]="searchTerm()"
+            (input)="onSearch($event)"
+            placeholder="Rechercher un étudiant"
+            class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-800 outline-hidden transition placeholder:text-gray-400 focus:border-brand-400 focus:bg-white focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white" /></label
+        ><select
+          (change)="onStatusFilterChange($event)"
+          class="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 outline-hidden focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <option value="all">Tous les statuts</option>
+          @for (
+            status of [
+              EnrollmentStatus.DRAFT,
+              EnrollmentStatus.ACTIVE,
+              EnrollmentStatus.SUSPENDED,
+              EnrollmentStatus.COMPLETED,
+              EnrollmentStatus.CANCELLED,
+            ];
+            track status
+          ) {
+            <option [value]="status">{{ statusLabel(status) }}</option>
+          }</select
+        ><button
+          type="button"
+          (click)="refreshEnrollments()"
+          [disabled]="enrollmentStore.loadingEnrollments()"
+          class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+        >
+          Refresh
+        </button>
+      </div>
+    </div>
+    @if (enrollmentStore.error()) {
+      <div
+        class="mx-5 mt-5 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ enrollmentStore.error() }}
+      </div>
+    }
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-250 text-left">
+        <thead
+          class="bg-gray-50/80 text-xs font-semibold tracking-[.1em] text-gray-500 uppercase dark:bg-gray-900/60 dark:text-gray-400"
+        >
+          <tr>
+            <th class="px-5 py-4">Étudiant</th>
+            <th class="px-5 py-4">Année universitaire</th>
+            <th class="px-5 py-4">Plan de paiement</th>
+            <th class="px-5 py-4">Montant final</th>
+            <th class="px-5 py-4">Reste à payer</th>
+            <th class="px-5 py-4">Statut</th>
+            <th class="px-5 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @if (enrollmentStore.loadingEnrollments()) {
+            @for (row of [1, 2, 3]; track row) {
+              <tr class="animate-pulse">
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-36 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-24 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-32 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-6 w-20 rounded-full bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td></td>
+              </tr>
+            }
+          } @else {
+            @for (enrollment of filteredEnrollments(); track enrollment.id) {
+              <tr
+                class="group transition hover:bg-slate-50/70 dark:hover:bg-white/[.02]"
+              >
+                <td class="px-5 py-4">
+                  <p class="font-semibold text-gray-900 dark:text-white">
+                    {{ enrollment.studentFirstName }}
+                    {{ enrollment.studentLastName }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Registration fee:
+                    {{
+                      enrollment.registrationFeeAmount
+                        | currency: "DZD" : "symbol-narrow" : "1.2-2"
+                    }}
+                  </p>
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-medium text-gray-700 dark:text-gray-200"
+                >
+                  {{ enrollment.academicYearCode }}
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-medium text-gray-700 dark:text-gray-200"
+                >
+                  {{ enrollment.paymentPlanCode }}
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-semibold text-gray-800 dark:text-gray-100"
+                >
+                  {{
+                    enrollment.finalAmount
+                      | currency: "DZD" : "symbol-narrow" : "1.2-2"
+                  }}
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-semibold text-error-600 dark:text-error-400"
+                >
+                  {{
+                    enrollment.remainingAmount
+                      | currency: "DZD" : "symbol-narrow" : "1.2-2"
+                  }}
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    [class]="
+                      'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+                      statusClasses(enrollment.status)
+                    "
+                    >{{ statusLabel(enrollment.status) }}</span
+                  >
+                </td>
+                <td class="px-5 py-4">
+                  <div class="relative flex justify-end">
+                    <button
+                      type="button"
+                      (click)="toggleActionMenu(enrollment.id)"
+                      [attr.aria-expanded]="openActionMenuId() === enrollment.id"
+                      class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-teal-500/10"
+                    >
+                      Actions
+                      <svg class="size-3.5" viewBox="0 0 24 24" fill="none">
+                        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                    @if (openActionMenuId() === enrollment.id) {
+                      <div class="absolute right-0 top-full z-20 mt-2 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white p-1.5 text-left shadow-lg shadow-gray-900/10 dark:border-gray-700 dark:bg-gray-900">
+                        <button type="button" (click)="openDetails(enrollment)" [disabled]="enrollmentStore.loadingEnrollmentDetails()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-teal-700 transition hover:bg-teal-50 disabled:opacity-50 dark:text-teal-300 dark:hover:bg-teal-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.8"/></svg>Details</button>
+                        <button type="button" (click)="viewInstallments(enrollment)" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-cyan-700 transition hover:bg-cyan-50 dark:text-cyan-300 dark:hover:bg-cyan-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M7 3v3m10-3v3M5 10h14M6 5h12a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 14h8M8 17h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Installments</button>
+                        <button type="button" (click)="viewPayments(enrollment)" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M6 4v3m12-3v3M6 11h12v9H6z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 15h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Payments</button>
+                        <button type="button" (click)="openEditForm(enrollment)" [disabled]="enrollmentStore.savingEnrollment() || enrollmentStore.loadingEnrollmentDetails()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:text-gray-200 dark:hover:bg-gray-800"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Edit</button>
+                        <div class="my-1 border-t border-gray-100 dark:border-gray-800"></div>
+                        @if (enrollment.status === EnrollmentStatus.ACTIVE) {
+                          <button type="button" (click)="suspendEnrollment(enrollment)" [disabled]="enrollmentStore.savingEnrollment()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50 disabled:opacity-50 dark:text-amber-300 dark:hover:bg-amber-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M8 4v16m8-16v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Suspend</button>
+                        } @else if (
+                          enrollment.status === EnrollmentStatus.DRAFT ||
+                          enrollment.status === EnrollmentStatus.SUSPENDED ||
+                          enrollment.status === EnrollmentStatus.CANCELLED
+                        ) {
+                          <button type="button" (click)="openActivateDialog(enrollment)" [disabled]="enrollmentStore.savingEnrollment()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50 dark:text-emerald-300 dark:hover:bg-emerald-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Activate</button>
+                        }
+                        @if (enrollment.status !== EnrollmentStatus.CANCELLED && enrollment.status !== EnrollmentStatus.COMPLETED) {
+                          <button type="button" (click)="openCancelDialog(enrollment)" [disabled]="enrollmentStore.savingEnrollment()" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-error-600 transition hover:bg-error-50 disabled:opacity-50 dark:text-error-400 dark:hover:bg-error-500/10"><svg class="size-4" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Cancel</button>
+                        }
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="px-5 py-16 text-center">
+                  <div
+                    class="mx-auto grid size-12 place-items-center rounded-2xl bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-300"
+                  >
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M12 5v14m-7-7h14"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </div>
+                  <h3 class="mt-4 font-semibold text-gray-900 dark:text-white">
+                    No enrollments found
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Create the first enrollment to connect a student with a
+                    plan.
+                  </p>
+                  <button
+                    type="button"
+                    (click)="openCreateForm()"
+                    class="mt-5 text-sm font-semibold text-brand-600 dark:text-brand-400"
+                  >
+                    Create enrollment
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [paginationSignal]="enrollmentStore.pagination"
+      (onPageChange)="onEnrollmentsPageChange($event)"
+    />
+  </div>
+</section>
+
+<app-modal
+  [isOpen]="isDetailsOpen()"
+  (close)="closeDetails()"
+  className="max-w-4xl mx-4"
+>
+  @if (selectedEnrollment(); as enrollment) {
+    <div class="p-6 sm:p-8">
+      <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+        <p
+          class="text-xs font-semibold tracking-[.18em] text-teal-700 uppercase dark:text-teal-300"
+        >
+          Détails de l’inscription
+        </p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <h2
+            class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+          >
+            {{ enrollment.studentFirstName }} {{ enrollment.studentLastName }}
+          </h2>
+          <span
+            [class]="
+              'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+              statusClasses(enrollment.status)
+            "
+            >{{ statusLabel(enrollment.status) }}</span
+          >
+        </div>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {{ enrollment.studentEmail }}
+        </p>
+      </div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+        <article
+          class="rounded-2xl border border-teal-100 bg-teal-50/60 p-5 dark:border-teal-500/15 dark:bg-teal-500/5"
+        >
+          <p
+            class="text-xs font-semibold tracking-[.14em] text-teal-700 uppercase dark:text-teal-300"
+          >
+            Final amount
+          </p>
+          <p
+            class="mt-2 text-2xl font-semibold tracking-tight text-teal-950 dark:text-teal-100"
+          >
+            {{
+              enrollment.finalAmount
+                | currency: "DZD" : "symbol-narrow" : "1.2-2"
+            }}
+          </p>
+        </article>
+        <article
+          class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 dark:border-emerald-500/15 dark:bg-emerald-500/5"
+        >
+          <p
+            class="text-xs font-semibold tracking-[.14em] text-emerald-700 uppercase dark:text-emerald-300"
+          >
+            Paid amount
+          </p>
+          <p
+            class="mt-2 text-2xl font-semibold tracking-tight text-emerald-950 dark:text-emerald-100"
+          >
+            {{
+              enrollment.paidAmount
+                | currency: "DZD" : "symbol-narrow" : "1.2-2"
+            }}
+          </p>
+        </article>
+        <article
+          class="rounded-2xl border border-error-100 bg-error-50/60 p-5 dark:border-error-500/15 dark:bg-error-500/5"
+        >
+          <p
+            class="text-xs font-semibold tracking-[.14em] text-error-700 uppercase dark:text-error-300"
+          >
+            Remaining amount
+          </p>
+          <p
+            class="mt-2 text-2xl font-semibold tracking-tight text-error-950 dark:text-error-100"
+          >
+            {{
+              enrollment.remainingAmount
+                | currency: "DZD" : "symbol-narrow" : "1.2-2"
+            }}
+          </p>
+        </article>
+      </div>
+      <div class="mt-6 grid gap-4 md:grid-cols-2">
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+            Student
+          </h3>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Name</dt>
+              <dd class="mt-1 font-medium text-gray-800 dark:text-gray-100">
+                {{ enrollment.studentFirstName }}
+                {{ enrollment.studentLastName }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Email</dt>
+              <dd
+                class="mt-1 break-all font-medium text-gray-800 dark:text-gray-100"
+              >
+                {{ enrollment.studentEmail }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+            Academic session
+          </h3>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Academic year</dt>
+              <dd class="mt-1 font-medium text-gray-800 dark:text-gray-100">
+                {{ enrollment.academicYearCode }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Promotion</dt>
+              <dd class="mt-1 font-medium text-gray-800 dark:text-gray-100">
+                {{ enrollment.promotionName }} · {{ enrollment.promotionCode }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+            Payment plan
+          </h3>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Code and type</dt>
+              <dd class="mt-1 font-medium text-gray-800 dark:text-gray-100">
+                {{ enrollment.paymentPlanCode }} ·
+                {{ enrollment.paymentPlanType }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+            Amount breakdown
+          </h3>
+          <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Registration fee</dt>
+              <dd class="mt-1 font-medium">
+                {{
+                  enrollment.registrationFeeAmount
+                    | currency: "DZD" : "symbol-narrow" : "1.2-2"
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Tuition</dt>
+              <dd class="mt-1 font-medium">
+                {{
+                  enrollment.tuitionAmount
+                    | currency: "DZD" : "symbol-narrow" : "1.2-2"
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Discount</dt>
+              <dd class="mt-1 font-medium">
+                {{
+                  enrollment.discountAmount
+                    | currency: "DZD" : "symbol-narrow" : "1.2-2"
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Total amount</dt>
+              <dd class="mt-1 font-medium">
+                {{
+                  enrollment.totalAmount
+                    | currency: "DZD" : "symbol-narrow" : "1.2-2"
+                }}
+              </dd>
+            </div>
+            <div class="col-span-2">
+              <dt class="text-xs text-gray-500">Discount reason</dt>
+              <dd class="mt-1 font-medium">
+                {{ enrollment.discountReason || "No discount reason provided" }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+      </div>
+      <div
+        class="mt-6 flex items-center justify-between border-t border-gray-100 pt-5 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400"
+      >
+        <span>Created by {{ enrollment.createdBy || "System" }}</span
+        ><span>{{ enrollment.createdAt | date: "dd MMM yyyy, HH:mm" }}</span>
+      </div>
+    </div>
+  }
+</app-modal>
+
+<app-modal
+  [isOpen]="isFormOpen()"
+  (close)="closeForm()"
+  className="max-w-2xl mx-4"
+  ><form
+    [formGroup]="enrollmentForm"
+    (ngSubmit)="submitEnrollment()"
+    class="p-6 sm:p-8"
+  >
+    <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+      <p
+        class="text-xs font-semibold tracking-[.18em] text-teal-700 uppercase dark:text-teal-300"
+      >
+        Configuration de l’inscription
+      </p>
+      <h2
+        class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ editingEnrollment() ? "Modifier l’inscription" : "Créer une inscription" }}
+      </h2>
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        Link the student, promotion session, and payment plan, then apply any
+        discount.
+      </p>
+    </div>
+    @if (pickerError()) {
+      <p
+        class="mt-4 rounded-lg bg-error-50 px-3 py-2 text-sm text-error-700 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ pickerError() }}
+      </p>
+    }
+    <div class="mt-6 grid gap-5 sm:grid-cols-2">
+      <div class="relative sm:col-span-2">
+        <span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Student</span
+        ><button
+          type="button"
+          (click)="toggleStudentDropdown()"
+          class="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3.5 text-left text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        >
+          <span
+            [class.text-gray-400]="!enrollmentForm.controls.studentId.value"
+            >{{ selectedStudentLabel() }}</span
+          ><svg class="size-4 text-gray-400" viewBox="0 0 24 24" fill="none">
+            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" />
+          </svg>
+        </button>
+        @if (isStudentDropdownOpen()) {
+          <div
+            role="listbox"
+            appInfiniteScroll
+            [infiniteScrollDisabled]="!canLoadNextStudents()"
+            (infiniteScrollEnd)="loadNextStudents()"
+            class="absolute z-30 mt-2 max-h-44 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+          >
+            @for (student of students(); track student.id) {
+              <button
+                type="button"
+                role="option"
+                (click)="selectStudent(student)"
+                class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-teal-50 dark:text-gray-200 dark:hover:bg-teal-500/10"
+              >
+                {{ student.firstName }} {{ student.lastName }}
+              </button>
+            }
+            @if (loadingStudents()) {
+              <p class="px-3 py-2 text-xs text-gray-500">
+                Loading more students…
+              </p>
+            }
+          </div>
+        }
+      </div>
+      <div class="relative">
+        <span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Promotion session</span
+        ><button
+          type="button"
+          (click)="togglePromotionSessionDropdown()"
+          class="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3.5 text-left text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        >
+          <span
+            class="truncate"
+            [class.text-gray-400]="
+              !enrollmentForm.controls.promotionSessionId.value
+            "
+            >{{ selectedPromotionSessionLabel() }}</span
+          ><svg class="size-4 text-gray-400" viewBox="0 0 24 24" fill="none">
+            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" />
+          </svg>
+        </button>
+        @if (isPromotionSessionDropdownOpen()) {
+          <div
+            role="listbox"
+            appInfiniteScroll
+            [infiniteScrollDisabled]="!canLoadNextPromotionSessions()"
+            (infiniteScrollEnd)="loadNextPromotionSessions()"
+            class="absolute z-30 mt-2 max-h-44 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+          >
+            @for (session of promotionSessions(); track session.id) {
+              <button
+                type="button"
+                role="option"
+                (click)="selectPromotionSession(session)"
+                class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-teal-50 dark:text-gray-200 dark:hover:bg-teal-500/10"
+              >
+                {{ session.code }}
+              </button>
+            }
+            @if (loadingPromotionSessions()) {
+              <p class="px-3 py-2 text-xs text-gray-500">
+                Loading more sessions…
+              </p>
+            }
+          </div>
+        }
+      </div>
+      <div class="relative">
+        <span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Payment plan</span
+        ><button
+          type="button"
+          (click)="togglePaymentPlanDropdown()"
+          class="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3.5 text-left text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        >
+          <span
+            class="truncate"
+            [class.text-gray-400]="!enrollmentForm.controls.paymentPlanId.value"
+            >{{ selectedPaymentPlanLabel() }}</span
+          ><svg class="size-4 text-gray-400" viewBox="0 0 24 24" fill="none">
+            <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" />
+          </svg>
+        </button>
+        @if (isPaymentPlanDropdownOpen()) {
+          <div
+            role="listbox"
+            appInfiniteScroll
+            [infiniteScrollDisabled]="!canLoadNextPaymentPlans()"
+            (infiniteScrollEnd)="loadNextPaymentPlans()"
+            class="absolute z-30 mt-2 max-h-44 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+          >
+            @for (plan of paymentPlans(); track plan.id) {
+              <button
+                type="button"
+                role="option"
+                (click)="selectPaymentPlan(plan)"
+                class="w-full rounded-lg px-3 py-2.5 text-left text-sm text-gray-700 hover:bg-teal-50 dark:text-gray-200 dark:hover:bg-teal-500/10"
+              >
+                {{ plan.code }}
+              </button>
+            }
+            @if (loadingPaymentPlans()) {
+              <p class="px-3 py-2 text-xs text-gray-500">Loading more plans…</p>
+            }
+          </div>
+        }
+      </div>
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Discount amount</span
+        ><input
+          formControlName="discountAmount"
+          type="number"
+          min="0"
+          step="0.01"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white" /></label
+      ><label class="block sm:col-span-2"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Discount reason <span class="text-gray-400">(optional)</span></span
+        ><textarea
+          formControlName="discountReason"
+          rows="3"
+          class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        ></textarea>
+      </label>
+    </div>
+    <div
+      class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end dark:border-gray-800"
+    >
+      <button
+        type="button"
+        (click)="closeForm()"
+        class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="submit"
+        [disabled]="enrollmentStore.savingEnrollment()"
+        class="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        {{
+          enrollmentStore.savingEnrollment()
+            ? "Saving…"
+            : editingEnrollment()
+              ? "Enregistrer les modifications"
+              : "Créer une inscription"
+        }}
+      </button>
+    </div>
+  </form></app-modal
+>
+
+<app-modal
+  [isOpen]="isActivateDialogOpen()"
+  (close)="closeActivateDialog()"
+  className="max-w-md mx-4"
+  ><div class="p-7 text-center">
+    <div
+      class="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300"
+    >
+      <svg class="size-7" viewBox="0 0 24 24" fill="none">
+        <path
+          d="m5 12 4 4L19 6"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+    <h2 class="mt-5 text-xl font-semibold text-gray-900 dark:text-white">
+      Activer cette inscription ?
+    </h2>
+    <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+      {{ enrollmentPendingActivation()?.studentFirstName }}
+      {{ enrollmentPendingActivation()?.studentLastName }}’s enrollment will
+      become active.
+    </p>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeActivateDialog()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="button"
+        (click)="activateEnrollment()"
+        [disabled]="enrollmentStore.savingEnrollment()"
+        class="h-11 flex-1 rounded-xl bg-emerald-600 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+      >
+        Activate
+      </button>
+    </div>
+  </div></app-modal
+>
+
+<app-modal
+  [isOpen]="isCancelDialogOpen()"
+  (close)="closeCancelDialog()"
+  className="max-w-md mx-4"
+  ><div class="p-7 text-center">
+    <div
+      class="mx-auto grid size-14 place-items-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300"
+    >
+      <svg class="size-7" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 7h14m-9 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+    <h2 class="mt-5 text-xl font-semibold text-gray-900 dark:text-white">
+      Annuler cette inscription ?
+    </h2>
+    <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+      {{ enrollmentPendingCancellation()?.studentFirstName }}
+      {{ enrollmentPendingCancellation()?.studentLastName }}’s enrollment will
+      be cancelled.
+    </p>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeCancelDialog()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+      >
+        Keep enrollment</button
+      ><button
+        type="button"
+        (click)="cancelEnrollment()"
+        [disabled]="enrollmentStore.savingEnrollment()"
+        class="h-11 flex-1 rounded-xl bg-error-600 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        Cancel enrollment
+      </button>
+    </div>
+  </div></app-modal
+>

@@ -1,0 +1,503 @@
+<section class="space-y-6 pb-8">
+  <header
+    class="relative overflow-hidden rounded-3xl bg-cyan-950 px-6 py-8 text-white shadow-2xl shadow-cyan-950/15 sm:px-8"
+  >
+    <div
+      class="absolute inset-0 opacity-25"
+      style="
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+        background-size: 28px 28px;
+      "
+    ></div>
+    <div
+      class="absolute -right-20 -top-28 size-72 rounded-full bg-teal-300/20 blur-3xl"
+    ></div>
+    <div
+      class="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div>
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center gap-1 text-xs font-semibold text-cyan-100 transition hover:text-white"
+        >
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none">
+            <path
+              d="m15 18-6-6 6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            /></svg
+          >Back to enrollments
+        </button>
+        <p
+          class="mt-5 flex items-center gap-2 text-xs font-semibold tracking-[.22em] text-teal-200 uppercase"
+        >
+          <span class="size-2 rounded-full bg-teal-200"></span>Enrollment
+          schedule
+        </p>
+        <h1
+          class="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl"
+        >
+          Installments at a glance.
+        </h1>
+        <p
+          class="mt-3 max-w-2xl text-sm leading-6 text-cyan-100/75 sm:text-base"
+        >
+          Generated payment obligations for this enrollment, with their due
+          dates and payment progress.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="generateInstallments()"
+        [disabled]="installmentStore.saving()"
+        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-300 px-4 text-sm font-semibold text-cyan-950 shadow-lg shadow-teal-300/15 transition hover:-translate-y-0.5 hover:bg-teal-200 disabled:opacity-60"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          /></svg
+        >Générer les échéances
+      </button>
+    </div>
+  </header>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <article
+      class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+    >
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+        Scheduled installments
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ totalInstallments() }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        For this enrollment
+      </p>
+    </article>
+    <article
+      class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 shadow-theme-xs dark:border-emerald-500/15 dark:bg-emerald-500/5"
+    >
+      <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+        Paid on this page
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-emerald-900 dark:text-emerald-100"
+      >
+        {{ paidInstallmentsOnPage() }}
+      </p>
+      <p class="mt-1 text-xs text-emerald-700/75 dark:text-emerald-300/70">
+        Fully settled obligations
+      </p>
+    </article>
+  </div>
+  <div
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+  >
+    <div
+      class="flex flex-col gap-4 border-b border-gray-100 p-5 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Payment schedule
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Adjust dates or cancel outstanding installments when necessary.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <label class="relative block min-w-56"
+          ><span class="sr-only">Search installments</span
+          ><input
+            type="search"
+            [value]="searchTerm()"
+            (input)="onSearch($event)"
+            placeholder="Search label or type"
+            class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-800 outline-hidden focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white" /></label
+        ><select
+          (change)="onStatusFilterChange($event)"
+          class="h-11 rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 outline-hidden focus:border-brand-400 focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <option value="all">All statuses</option>
+          @for (
+            status of [
+              InstallmentStatus.PENDING,
+              InstallmentStatus.PARTIALLY_PAID,
+              InstallmentStatus.PAID,
+              InstallmentStatus.OVERDUE,
+              InstallmentStatus.CANCELLED,
+            ];
+            track status
+          ) {
+            <option [value]="status">{{ statusLabel(status) }}</option>
+          }</select
+        ><button
+          type="button"
+          (click)="refreshInstallments()"
+          [disabled]="installmentStore.loading()"
+          class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+        >
+          Refresh
+        </button>
+      </div>
+    </div>
+    @if (installmentStore.error()) {
+      <div
+        class="mx-5 mt-5 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ installmentStore.error() }}
+      </div>
+    }
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-220 text-left">
+        <thead
+          class="bg-gray-50/80 text-xs font-semibold tracking-[.1em] text-gray-500 uppercase dark:bg-gray-900/60 dark:text-gray-400"
+        >
+          <tr>
+            <th class="px-5 py-4">Installment</th>
+            <th class="px-5 py-4">Due date</th>
+            <th class="px-5 py-4">Expected</th>
+            <th class="px-5 py-4">Paid</th>
+            <th class="px-5 py-4">Remaining</th>
+            <th class="px-5 py-4">Status</th>
+            <th class="px-5 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @if (installmentStore.loading()) {
+            @for (row of [1, 2, 3]; track row) {
+              <tr class="animate-pulse">
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-32 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-24 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-6 w-20 rounded-full bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td></td>
+              </tr>
+            }
+          } @else {
+            @for (installment of filteredInstallments(); track installment.id) {
+              <tr
+                class="transition hover:bg-slate-50/70 dark:hover:bg-white/[.02]"
+              >
+                <td class="px-5 py-4">
+                  <p class="font-semibold text-gray-900 dark:text-white">
+                    {{ installment.label }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    #{{ installment.sequenceNumber }} ·
+                    {{ typeLabel(installment.type) }}
+                  </p>
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  {{ installment.dueDate | date: 'dd MMM yyyy' }}
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-semibold text-gray-800 dark:text-gray-100"
+                >
+                  {{
+                    installment.expectedAmount
+                      | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+                  }}
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-semibold text-emerald-700 dark:text-emerald-300"
+                >
+                  {{
+                    installment.paidAmount
+                      | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+                  }}
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-semibold text-error-600 dark:text-error-400"
+                >
+                  {{
+                    installment.remainingAmount
+                      | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+                  }}
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    [class]="
+                      'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+                      statusClasses(installment.status)
+                    "
+                    >{{ statusLabel(installment.status) }}</span
+                  >
+                </td>
+                <td class="px-5 py-4">
+                  <div class="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      (click)="openDetails(installment)"
+                      [disabled]="installmentStore.loadingDetails()"
+                      class="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:bg-cyan-100 disabled:opacity-50 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-300"
+                    >
+                      Details
+                    </button>
+                    @if (
+                      installment.status !== InstallmentStatus.PAID &&
+                      installment.status !== InstallmentStatus.CANCELLED
+                    ) {
+                      <button
+                        type="button"
+                        (click)="openDueDateForm(installment)"
+                        [disabled]="
+                          installmentStore.loadingDetails() ||
+                          installmentStore.saving()
+                        "
+                        class="rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                      >
+                        Due date</button
+                      ><button
+                        type="button"
+                        (click)="openCancelDialog(installment)"
+                        [disabled]="installmentStore.saving()"
+                        class="rounded-lg px-3 py-2 text-xs font-semibold text-error-600 transition hover:bg-error-50 disabled:opacity-50 dark:text-error-400"
+                      >
+                        Cancel
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="px-5 py-16 text-center">
+                  <h3 class="font-semibold text-gray-900 dark:text-white">
+                    No installments generated yet
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Generate the schedule from this enrollment when it is ready.
+                  </p>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [paginationSignal]="installmentStore.pagination"
+      (onPageChange)="onPageChange($event)"
+    />
+  </div>
+</section>
+
+<app-modal
+  [isOpen]="isDetailsOpen()"
+  (close)="closeDetails()"
+  className="max-w-2xl mx-4"
+>
+  @if (selectedInstallment(); as installment) {
+    <div class="p-6 sm:p-8">
+      <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+        <p
+          class="text-xs font-semibold tracking-[.18em] text-cyan-700 uppercase dark:text-cyan-300"
+        >
+          Détails de l’échéance
+        </p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <h2
+            class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+          >
+            {{ installment.label }}
+          </h2>
+          <span
+            [class]="
+              'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+              statusClasses(installment.status)
+            "
+            >{{ statusLabel(installment.status) }}</span
+          >
+        </div>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {{ installment.studentFirstName }} {{ installment.studentLastName }} ·
+          {{ installment.paymentPlanCode }}
+        </p>
+      </div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+        <article
+          class="rounded-xl border border-cyan-100 bg-cyan-50/60 p-4 dark:border-cyan-500/15 dark:bg-cyan-500/5"
+        >
+          <p class="text-xs text-cyan-700">Expected</p>
+          <p class="mt-2 text-xl font-semibold">
+            {{
+              installment.expectedAmount
+                | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+            }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 dark:border-emerald-500/15 dark:bg-emerald-500/5"
+        >
+          <p class="text-xs text-emerald-700">Paid</p>
+          <p class="mt-2 text-xl font-semibold">
+            {{
+              installment.paidAmount
+                | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+            }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-error-100 bg-error-50/60 p-4 dark:border-error-500/15 dark:bg-error-500/5"
+        >
+          <p class="text-xs text-error-700">Remaining</p>
+          <p class="mt-2 text-xl font-semibold">
+            {{
+              installment.remainingAmount
+                | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+            }}
+          </p>
+        </article>
+      </div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-2">
+        <article
+          class="rounded-xl border border-gray-100 p-4 dark:border-gray-800"
+        >
+          <p class="text-xs text-gray-500">Student</p>
+          <p class="mt-1 text-sm font-medium">
+            {{ installment.studentFirstName }} {{ installment.studentLastName }}
+          </p>
+          <p class="mt-4 text-xs text-gray-500">Payment plan</p>
+          <p class="mt-1 text-sm font-medium">
+            {{ installment.paymentPlanCode }}
+          </p>
+          <p class="mt-4 text-xs text-gray-500">Installment label</p>
+          <p class="mt-1 text-sm font-medium">{{ installment.label }}</p>
+        </article>
+        <article
+          class="rounded-xl border border-gray-100 p-4 dark:border-gray-800"
+        >
+          <p class="text-xs text-gray-500">Sequence and type</p>
+          <p class="mt-1 text-sm font-medium">
+            #{{ installment.sequenceNumber }} ·
+            {{ typeLabel(installment.type) }}
+          </p>
+          <p class="mt-4 text-xs text-gray-500">Due date</p>
+          <p class="mt-1 text-sm font-medium">
+            {{ installment.dueDate | date: 'dd MMMM yyyy' }}
+          </p>
+          <p class="mt-4 text-xs text-gray-500">Created</p>
+          <p class="mt-1 text-sm font-medium">
+            {{ installment.createdAt | date: 'dd MMM yyyy, HH:mm' }} by
+            {{ installment.createdBy || 'System' }}
+          </p>
+        </article>
+      </div>
+    </div>
+  }
+</app-modal>
+<app-modal
+  [isOpen]="isDueDateFormOpen()"
+  (close)="closeDueDateForm()"
+  className="max-w-md mx-4"
+  ><form [formGroup]="dueDateForm" (ngSubmit)="saveDueDate()" class="p-7">
+    <p
+      class="text-xs font-semibold tracking-[.18em] text-cyan-700 uppercase dark:text-cyan-300"
+    >
+      Schedule adjustment
+    </p>
+    <h2 class="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
+      Modifier la date d’échéance
+    </h2>
+    <label class="mt-6 block"
+      ><span
+        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+        >Due date</span
+      ><input
+        formControlName="dueDate"
+        type="date"
+        class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+    /></label>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeDueDateForm()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="submit"
+        [disabled]="installmentStore.saving()"
+        class="h-11 flex-1 rounded-xl bg-brand-600 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        Save date
+      </button>
+    </div>
+  </form></app-modal
+>
+<app-modal
+  [isOpen]="isCancelDialogOpen()"
+  (close)="closeCancelDialog()"
+  className="max-w-md mx-4"
+  ><div class="p-7 text-center">
+    <div
+      class="mx-auto grid size-14 place-items-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300"
+    >
+      <svg class="size-7" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M6 6l12 12M18 6 6 18"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+    <h2 class="mt-5 text-xl font-semibold text-gray-900 dark:text-white">
+      Cancel this installment?
+    </h2>
+    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+      {{ pendingCancelInstallment()?.label }} will be cancelled.
+    </p>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeCancelDialog()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+      >
+        Keep installment</button
+      ><button
+        type="button"
+        (click)="cancelInstallment()"
+        [disabled]="installmentStore.saving()"
+        class="h-11 flex-1 rounded-xl bg-error-600 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        Annuler l’échéance
+      </button>
+    </div>
+  </div></app-modal
+>

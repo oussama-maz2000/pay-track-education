@@ -1,0 +1,34 @@
+<button
+  type="button"
+  [ngClass]="
+    'inline-flex items-center justify-center gap-2 rounded-lg transition ' +
+    className + ' ' +
+    sizeClasses + ' ' +
+    variantClasses + ' ' +
+    disabledClasses
+  "
+  [disabled]="isDisabled"
+  [attr.aria-busy]="loading"
+  (click)="onClick($event)"
+>
+  @if (startIcon) {
+  <span class="flex items-center" [innerHTML]="startIcon | safeHtml"></span>
+  }
+  @if (loading) {
+  <svg
+    class="size-4 animate-spin"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"></path>
+  </svg>
+  <span>Connexion...</span>
+  } @else {
+  <ng-content></ng-content>
+  }
+  @if (endIcon) {
+  <span class="flex items-center" [innerHTML]="endIcon | safeHtml"></span>
+  }
+</button>

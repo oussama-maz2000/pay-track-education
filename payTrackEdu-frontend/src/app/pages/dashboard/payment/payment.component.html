@@ -1,0 +1,617 @@
+<section class="space-y-6 pb-8">
+  <header
+    class="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-2xl shadow-slate-950/15 sm:px-8"
+  >
+    <div
+      class="absolute inset-0 opacity-20"
+      style="
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
+        background-size: 28px 28px;
+      "
+    ></div>
+    <div
+      class="absolute -right-20 -top-28 size-72 rounded-full bg-amber-300/20 blur-3xl"
+    ></div>
+    <div
+      class="relative flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between"
+    >
+      <div>
+        <button
+          type="button"
+          (click)="goBack()"
+          class="inline-flex items-center gap-1 text-xs font-semibold text-slate-300 transition hover:text-white"
+        >
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="none">
+            <path
+              d="m15 18-6-6 6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+          Retour aux inscriptions
+        </button>
+        <p
+          class="mt-5 flex items-center gap-2 text-xs font-semibold tracking-[.22em] text-amber-200 uppercase"
+        >
+          <span class="size-2 rounded-full bg-amber-200"></span>Registre de
+          l’inscription
+        </p>
+        <h1
+          class="mt-3 font-serif text-3xl font-semibold tracking-tight sm:text-4xl"
+        >
+          Des paiements clairement enregistrés.
+        </h1>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+          Consultez chaque transaction de cette inscription et conservez une
+          trace complète et vérifiable des reçus.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="openForm()"
+        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-300/15 transition hover:-translate-y-0.5 hover:bg-amber-200"
+      >
+        <svg class="size-4" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 5v14M5 12h14"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+        Enregistrer un paiement
+      </button>
+    </div>
+  </header>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <article
+      class="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+    >
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+        Paiements enregistrés
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        {{ totalPayments() }}
+      </p>
+      <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        Pour cette inscription
+      </p>
+    </article>
+    <article
+      class="rounded-2xl border border-amber-100 bg-amber-50/60 p-5 shadow-theme-xs dark:border-amber-500/15 dark:bg-amber-500/5"
+    >
+      <p class="text-sm font-medium text-amber-800 dark:text-amber-200">
+        Montant sur cette page
+      </p>
+      <p
+        class="mt-5 text-3xl font-semibold tracking-tight text-amber-950 dark:text-amber-100"
+      >
+        {{ amountOnPage() | currency: 'DZD' : 'symbol-narrow' : '1.2-2' }}
+      </p>
+      <p class="mt-1 text-xs text-amber-700/75 dark:text-amber-300/70">
+        Transactions actuellement affichées
+      </p>
+    </article>
+  </div>
+
+  <div
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-dark"
+  >
+    <div
+      class="flex flex-col gap-4 border-b border-gray-100 p-5 dark:border-gray-800 lg:flex-row lg:items-center lg:justify-between"
+    >
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Historique des transactions
+        </h2>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Ouvrez un reçu pour consulter l’enregistrement complet du paiement.
+        </p>
+      </div>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <label class="relative block min-w-56"
+          ><span class="sr-only">Rechercher des paiements</span
+          ><input
+            type="search"
+            [value]="searchTerm()"
+            (input)="onSearch($event)"
+            placeholder="Reçu, méthode, référence"
+            class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-800 outline-hidden focus:border-amber-400 focus:ring-3 focus:ring-amber-500/15 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        /></label>
+        <button
+          type="button"
+          (click)="refreshPayments()"
+          [disabled]="paymentStore.loading()"
+          class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300"
+        >
+          Actualiser
+        </button>
+      </div>
+    </div>
+    @if (paymentStore.error()) {
+      <div
+        class="mx-5 mt-5 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-700 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-300"
+      >
+        {{ paymentStore.error() }}
+      </div>
+    }
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-220 text-left">
+        <thead
+          class="bg-gray-50/80 text-xs font-semibold tracking-[.1em] text-gray-500 uppercase dark:bg-gray-900/60 dark:text-gray-400"
+        >
+          <tr>
+            <th class="px-5 py-4">Reçu</th>
+            <th class="px-5 py-4">Date</th>
+            <th class="px-5 py-4">Méthode</th>
+            <th class="px-5 py-4">Référence</th>
+            <th class="px-5 py-4">Montant</th>
+            <th class="px-5 py-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+          @if (paymentStore.loading()) {
+            @for (row of [1, 2, 3]; track row) {
+              <tr class="animate-pulse">
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-28 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-24 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-24 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td class="px-5 py-5">
+                  <div
+                    class="h-4 w-20 rounded bg-gray-100 dark:bg-gray-800"
+                  ></div>
+                </td>
+                <td></td>
+              </tr>
+            }
+          } @else {
+            @for (payment of filteredPayments(); track payment.id) {
+              <tr
+                class="transition hover:bg-amber-50/35 dark:hover:bg-white/[.02]"
+              >
+                <td class="px-5 py-4">
+                  <p class="font-semibold text-gray-900 dark:text-white">
+                    {{ payment.receiptNumber }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Recorded {{ payment.createdAt | date: 'dd MMM yyyy' }}
+                  </p>
+                </td>
+                <td class="px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+                  {{ payment.paymentDate | date: 'dd MMM yyyy' }}
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+                    >{{ paymentMethodLabel(payment.paymentMethod) }}</span
+                  >
+                </td>
+                <td
+                  class="max-w-44 truncate px-5 py-4 text-sm text-gray-600 dark:text-gray-300"
+                >
+                  {{ payment.reference || '—' }}
+                </td>
+                <td
+                  class="px-5 py-4 text-sm font-semibold text-gray-900 dark:text-white"
+                >
+                  {{
+                    payment.amount | currency: 'DZD' : 'symbol-narrow' : '1.2-2'
+                  }}
+                </td>
+                <td class="px-5 py-4 text-right">
+                  <div class="inline-flex gap-2">
+                    <button
+                      type="button"
+                      (click)="openDetails(payment)"
+                      [disabled]="paymentStore.loadingDetails()"
+                      class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:bg-amber-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-amber-500/10"
+                    >
+                      Details</button
+                    ><button
+                      type="button"
+                      (click)="openCancelDialog(payment)"
+                      [disabled]="
+                        paymentStore.loadingDetails() || paymentStore.saving()
+                      "
+                      class="rounded-lg border border-error-200 px-3 py-1.5 text-xs font-semibold text-error-700 transition hover:bg-error-50 disabled:opacity-50 dark:border-error-500/30 dark:text-error-300 dark:hover:bg-error-500/10"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="px-5 py-14 text-center">
+                  <div
+                    class="mx-auto grid size-12 place-items-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300"
+                  >
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M4 7h16M7 3v4m10-4v4M6 11h12v8H6z"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <p class="mt-3 font-semibold text-gray-800 dark:text-white">
+                    No payments found
+                  </p>
+                  <p class="mt-1 text-sm text-gray-500">
+                    Record the first payment for this enrollment.
+                  </p>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [paginationSignal]="paymentStore.pagination"
+      (onPageChange)="onPageChange($event)"
+    />
+  </div>
+</section>
+
+<app-modal
+  [isOpen]="isDetailsOpen()"
+  (close)="closeDetails()"
+  className="max-w-3xl mx-4"
+>
+  @if (selectedPayment(); as payment) {
+    <div class="p-6 sm:p-8">
+      <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+        <div>
+          <p
+            class="text-xs font-semibold tracking-[.18em] text-amber-700 uppercase dark:text-amber-300"
+          >
+            Reçu de paiement
+          </p>
+          <h2
+            class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+          >
+            {{ payment.receiptNumber }}
+          </h2>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {{ payment.studentFirstName }} {{ payment.studentLastName }} ·
+            {{ payment.promotionCode }}
+            <span
+              [class]="
+                'ml-1 inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ' +
+                paymentStatusClasses(payment.status)
+              "
+              >{{ payment.status }}</span
+            >
+          </p>
+        </div>
+      </div>
+      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+        <article
+          class="rounded-2xl border border-amber-100 bg-amber-50/60 p-5 dark:border-amber-500/15 dark:bg-amber-500/5"
+        >
+          <p
+            class="text-xs font-semibold tracking-[.14em] text-amber-700 uppercase dark:text-amber-300"
+          >
+            Amount received
+          </p>
+          <p
+            class="mt-2 text-2xl font-semibold tracking-tight text-amber-950 dark:text-amber-100"
+          >
+            {{ payment.amount | currency: 'DZD' : 'symbol-narrow' : '1.2-2' }}
+          </p>
+        </article>
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <p
+            class="text-xs font-semibold tracking-[.14em] text-gray-500 uppercase"
+          >
+            Date du paiement
+          </p>
+          <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+            {{ payment.paymentDate | date: 'dd MMM yyyy' }}
+          </p>
+        </article>
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <p
+            class="text-xs font-semibold tracking-[.14em] text-gray-500 uppercase"
+          >
+            Method
+          </p>
+          <p class="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
+            {{ paymentMethodLabel(payment.paymentMethod) }}
+          </p>
+        </article>
+      </div>
+      <div class="mt-6 grid gap-4 md:grid-cols-2">
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+            Enrollment context
+          </h3>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Student</dt>
+              <dd class="mt-1 font-medium text-gray-800 dark:text-gray-100">
+                {{ payment.studentFirstName }} {{ payment.studentLastName }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Academic year</dt>
+              <dd class="mt-1 font-medium text-gray-800 dark:text-gray-100">
+                {{ payment.academicYearCode }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+        <article
+          class="rounded-2xl border border-gray-100 p-5 dark:border-gray-800"
+        >
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+            Transaction notes
+          </h3>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div>
+              <dt class="text-xs text-gray-500">Reference</dt>
+              <dd
+                class="mt-1 break-words font-medium text-gray-800 dark:text-gray-100"
+              >
+                {{ payment.reference || 'No reference provided' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Notes</dt>
+              <dd
+                class="mt-1 whitespace-pre-wrap font-medium text-gray-800 dark:text-gray-100"
+              >
+                {{ payment.notes || 'No notes provided' }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+      </div>
+      @if (payment.status === PaymentStatus.CANCELLED) {
+        <div
+          class="mt-6 rounded-xl border border-error-200 bg-error-50 p-4 text-sm text-error-800 dark:border-error-500/20 dark:bg-error-500/10 dark:text-error-200"
+        >
+          <p class="font-semibold">Cancelled payment</p>
+          <p class="mt-1">
+            {{
+              payment.cancellationReason || 'No cancellation reason provided'
+            }}
+          </p>
+          @if (payment.cancelledAt) {
+            <p class="mt-1 text-xs opacity-75">
+              Cancelled {{ payment.cancelledAt | date: 'dd MMM yyyy, HH:mm' }}
+            </p>
+          }
+        </div>
+      }
+      <div
+        class="mt-6 flex items-center justify-between border-t border-gray-100 pt-5 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400"
+      >
+        <span>Recorded by {{ payment.createdBy || 'System' }}</span
+        ><span>{{ payment.createdAt | date: 'dd MMM yyyy, HH:mm' }}</span>
+      </div>
+    </div>
+  }
+</app-modal>
+
+<app-modal
+  [isOpen]="isFormOpen()"
+  (close)="closeForm()"
+  className="max-w-2xl mx-4"
+  ><form
+    [formGroup]="paymentForm"
+    (ngSubmit)="submitPayment()"
+    class="p-6 sm:p-8"
+  >
+    <div class="border-b border-gray-100 pb-6 dark:border-gray-800">
+      <p
+        class="text-xs font-semibold tracking-[.18em] text-amber-700 uppercase dark:text-amber-300"
+      >
+        New payment
+      </p>
+      <h2
+        class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"
+      >
+        Enregistrer un paiement
+      </h2>
+      <p class="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+        This transaction will be attached to the current enrollment.
+      </p>
+    </div>
+    <div class="mt-6 grid gap-5 sm:grid-cols-2">
+      <label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Date du paiement</span
+        ><input
+          formControlName="paymentDate"
+          type="date"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        />
+        @if (
+          paymentForm.controls.paymentDate.touched &&
+          paymentForm.controls.paymentDate.invalid
+        ) {
+          <span class="mt-1 block text-xs text-error-600"
+            >La date du paiement est obligatoire.</span
+          >
+        }</label
+      ><label class="block"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Amount</span
+        ><input
+          formControlName="amount"
+          type="number"
+          min="0.01"
+          step="0.01"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        />
+        @if (
+          paymentForm.controls.amount.touched &&
+          paymentForm.controls.amount.invalid
+        ) {
+          <span class="mt-1 block text-xs text-error-600"
+            >Enter an amount greater than zero.</span
+          >
+        }</label
+      ><label class="block sm:col-span-2"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Payment method</span
+        ><select
+            formControlName="paymentMethod"
+            class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          >
+            @for (
+              method of [
+                PaymentMethod.CASH,
+                PaymentMethod.CREDIT_CARD,
+                PaymentMethod.BANK_TRANSFER,
+                PaymentMethod.CHECK,
+                PaymentMethod.OTHER,
+              ];
+              track method
+            ) {
+              <option [value]="method">{{ paymentMethodLabel(method) }}</option>
+            }
+          </select></label
+      ><label class="block sm:col-span-2"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Reference <span class="text-gray-400">(optional)</span></span
+        ><input
+          formControlName="reference"
+          type="text"
+          placeholder="Transfer number, cheque number…"
+          class="h-11 w-full rounded-xl border border-gray-200 bg-white px-3.5 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white" /></label
+      ><label class="block sm:col-span-2"
+        ><span
+          class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+          >Notes <span class="text-gray-400">(optional)</span></span
+        ><textarea
+          formControlName="notes"
+          rows="3"
+          class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        ></textarea>
+      </label>
+    </div>
+    <div
+      class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end dark:border-gray-800"
+    >
+      <button
+        type="button"
+        (click)="closeForm()"
+        class="h-11 rounded-xl border border-gray-200 px-4 text-sm font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+      >
+        Cancel</button
+      ><button
+        type="submit"
+        [disabled]="paymentStore.saving()"
+        class="h-11 rounded-xl bg-amber-500 px-5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+      >
+        {{ paymentStore.saving() ? 'Recording…' : 'Record payment' }}
+      </button>
+    </div>
+  </form></app-modal
+>
+
+<app-modal
+  [isOpen]="isCancelDialogOpen()"
+  (close)="closeCancelDialog()"
+  className="max-w-md mx-4"
+  ><form
+    [formGroup]="cancellationForm"
+    (ngSubmit)="cancelPayment()"
+    class="p-7"
+  >
+    <div
+      class="mx-auto grid size-14 place-items-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-300"
+    >
+      <svg class="size-7" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M6 6l12 12M18 6 6 18"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+    </div>
+    <h2
+      class="mt-5 text-center text-xl font-semibold text-gray-900 dark:text-white"
+    >
+      Annuler ce paiement ?
+    </h2>
+    <p
+      class="mt-2 text-center text-sm leading-6 text-gray-500 dark:text-gray-400"
+    >
+      The receipt will remain in the history as cancelled. This cannot be
+      reversed from this screen.
+    </p>
+    <label class="mt-6 block"
+      ><span
+        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
+        >Motif d’annulation</span
+      ><textarea
+        formControlName="cancellationReason"
+        rows="3"
+        placeholder="Explain why this payment is being cancelled"
+        class="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+      ></textarea>
+      @if (
+        cancellationForm.controls.cancellationReason.touched &&
+        cancellationForm.controls.cancellationReason.invalid
+      ) {
+        <span class="mt-1 block text-xs text-error-600"
+          >Un motif d’annulation est obligatoire.</span
+        >
+      }
+    </label>
+    <div class="mt-7 flex gap-3">
+      <button
+        type="button"
+        (click)="closeCancelDialog()"
+        class="h-11 flex-1 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 dark:border-gray-700 dark:text-gray-300"
+      >
+        Keep payment</button
+      ><button
+        type="submit"
+        [disabled]="paymentStore.saving()"
+        class="h-11 flex-1 rounded-xl bg-error-600 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        Cancel payment
+      </button>
+    </div>
+  </form></app-modal
+>

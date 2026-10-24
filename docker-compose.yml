@@ -1,0 +1,65 @@
+services:
+  postgres-db:
+    image: postgres:18
+    restart: unless-stopped
+    container_name: paytrack-database
+    environment:
+      POSTGRES_DB: PAY_TRACK
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - paytrack-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  backend:
+    build:
+      context: ./payTrackEdu-backend
+      dockerfile: Dockerfile
+    container_name: paytrack-backend
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./payTrackEdu-backend/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres-db:5432/PAY_TRACK
+      STORAGE_ROOT: /app/data
+    volumes:
+      - app_data:/app/data
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - paytrack-network
+
+
+  # ==========================================
+  # ANGULAR FRONTEND
+  # ==========================================
+  frontend:
+    build:
+      context: ./payTrackEdu-frontend
+      dockerfile: Dockerfile
+    container_name: paytrack-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - paytrack-network
+
+volumes:
+  postgres_data:
+  app_data:
+networks:
+  paytrack-network:
+    driver: bridge

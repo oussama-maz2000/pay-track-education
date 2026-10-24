@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PayTrackEdu - Business Logic Guide</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 18mm; }
+    * { box-sizing: border-box; }
+    body { color: #16243a; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.48; margin: 0; }
+    h1 { color: #113b68; font-size: 25pt; line-height: 1.15; margin: 0 0 6px; }
+    h2 { border-bottom: 2px solid #65b7a8; color: #113b68; font-size: 15pt; margin: 25px 0 9px; padding-bottom: 4px; page-break-after: avoid; }
+    h3 { color: #1d5a73; font-size: 11.5pt; margin: 14px 0 4px; page-break-after: avoid; }
+    p { margin: 6px 0; }
+    ul, ol { margin: 6px 0 10px; padding-left: 23px; }
+    li { margin: 3px 0; }
+    .subtitle { color: #54708b; font-size: 12pt; margin-bottom: 20px; }
+    .summary { background: #eef8f5; border-left: 5px solid #43a893; margin: 14px 0 18px; padding: 12px 15px; }
+    .flow { background: #f5f8fb; border: 1px solid #d8e4ef; border-radius: 6px; color: #173d61; font-weight: bold; line-height: 1.8; margin: 12px 0; padding: 13px 16px; text-align: center; }
+    .rule { background: #fff8e5; border-left: 4px solid #e5ad37; margin: 9px 0; padding: 8px 12px; }
+    .example { background: #f5f8fb; border-left: 4px solid #6994be; margin: 10px 0; padding: 9px 12px; }
+    table { border-collapse: collapse; margin: 10px 0; width: 100%; }
+    th { background: #163f68; color: white; text-align: left; }
+    th, td { border: 1px solid #d5e0ea; padding: 7px 9px; vertical-align: top; }
+    tr:nth-child(even) td { background: #f7fafc; }
+    .footer { color: #6d7d8e; font-size: 8.5pt; margin-top: 24px; }
+    .page-break { break-before: page; }
+  </style>
+</head>
+<body>
+  <h1>PayTrackEdu</h1>
+  <div class="subtitle">Business Logic Guide &mdash; how the institution manages enrolments and tuition payments</div>
+
+  <div class="summary">
+    PayTrackEdu supports an educational institution from academic planning through student enrolment, scheduled fees, collection of payments, and balance follow-up. It keeps the financial history linked to each student's enrolment.
+  </div>
+
+  <h2>1. The business cycle</h2>
+  <div class="flow">Academic year + promotion &rarr; promotion session &rarr; payment plan &rarr; student enrolment &rarr; instalments &rarr; payments &rarr; balance tracking</div>
+  <p>The institution first defines what it offers, then enrols students into a specific offering for a specific academic year. A chosen payment plan determines what the student owes and when. Every received payment is assigned to the student's outstanding instalments, making the current balance visible at all times.</p>
+
+  <h2>2. Academic setup</h2>
+  <h3>Academic years</h3>
+  <p>An academic year has a unique code, start date, end date, and lifecycle status: Draft, Active, Closed, or Archived. The end date cannot be earlier than the start date.</p>
+
+  <h3>Promotions</h3>
+  <p>A promotion represents an educational programme, class, or cohort definition. Its code and name must be unique. A promotion can be active or inactive.</p>
+
+  <h3>Promotion sessions</h3>
+  <p>A promotion session connects one promotion to one academic year. For example, a "Web Development" promotion can have a separate session for the 2026-2027 academic year. The system automatically gives the session a combined code and records its registration fee.</p>
+  <div class="rule"><strong>Business rule:</strong> the same promotion can have only one active session in a given academic year.</div>
+  <p>A session moves through Draft, Open, Closed, and Archived. The status communicates whether it is being prepared, open for enrolment, closed, or retained for history.</p>
+
+  <h2>3. Students and enrolments</h2>
+  <h3>Student records</h3>
+  <p>Each student record stores identity, contact information, date of birth, and parent contact information. An active student email must be unique. Records are archived rather than permanently removed, so history can be retained and restored when needed.</p>
+
+  <h3>Creating an enrolment</h3>
+  <p>An enrolment links exactly three things: a student, a promotion session, and a payment plan belonging to that same session. It begins in <strong>Draft</strong> status.</p>
+  <ol>
+    <li>Select an active student.</li>
+    <li>Select the academic-year promotion session.</li>
+    <li>Select one of that session's payment plans.</li>
+    <li>Optionally enter a discount and its reason.</li>
+    <li>The system stores the session's registration fee and the plan's tuition amount on the enrolment.</li>
+    <li>The system automatically creates the enrolment instalments.</li>
+  </ol>
+  <div class="rule"><strong>Business rules:</strong> a student cannot have two active enrolments in the same promotion session; a plan cannot be selected for a different session; and a discount cannot exceed the full registration-plus-tuition total.</div>
+
+  <h3>Enrolment status</h3>
+  <table>
+    <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Draft</td><td>The enrolment has been prepared but is not yet active.</td></tr>
+      <tr><td>Active</td><td>The student is currently enrolled and payments can be recorded.</td></tr>
+      <tr><td>Suspended</td><td>The enrolment is temporarily paused.</td></tr>
+      <tr><td>Cancelled</td><td>The enrolment is no longer valid; no new payment can be created for it.</td></tr>
+      <tr><td>Completed</td><td>The enrolment is finished. It cannot later be activated, suspended, or cancelled.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. Payment plans and instalments</h2>
+  <p>A payment plan defines how the tuition for a promotion session is paid. The supported plan types are Cash, Trimester, and Monthly. Each plan has a total tuition amount and one or more dated plan instalments.</p>
+  <p>A plan instalment is either a <strong>deposit</strong> or a <strong>tuition</strong> instalment. Its sequence number must be unique within its plan, so the payment order is clear.</p>
+
+  <h3>How an enrolment schedule is created</h3>
+  <p>When an enrolment is created, PayTrackEdu creates a personal schedule for that student:</p>
+  <ul>
+    <li>First, a registration-fee instalment is created with today's date.</li>
+    <li>Then every instalment in the selected payment plan is copied into the enrolment schedule, with its amount and due date.</li>
+    <li>Tuition entries are labelled in order, such as "Tuition 1" and "Tuition 2".</li>
+  </ul>
+  <div class="rule"><strong>Discount treatment:</strong> a discount is applied from the last tuition instalment backwards. If it is larger than tuition, any remaining discount then reduces the registration fee. No instalment is reduced below zero.</div>
+
+  <p>Staff may change the due date of a non-cancelled instalment or cancel an instalment. A cancelled instalment is excluded from the amount that remains payable.</p>
+
+  <div class="page-break"></div>
+  <h2>5. Payments and automatic allocation</h2>
+  <p>A payment is recorded against an enrolment and includes its amount, payment date, method (Cash, Check, or Bank Transfer), optional reference, optional notes, and an automatically generated receipt number.</p>
+  <div class="rule"><strong>Business rules:</strong> a payment must be greater than zero, cannot be recorded for a cancelled enrolment, and cannot exceed the remaining amount due for that enrolment.</div>
+
+  <h3>Automatic allocation</h3>
+  <p>Immediately after a payment is recorded, the system allocates it to outstanding non-cancelled instalments in their schedule order. It pays the earliest unpaid instalment first, then continues with the next one until the payment is fully used or no balance remains.</p>
+  <div class="example"><strong>Example:</strong> if the registration fee has 100 remaining and Tuition 1 has 250 remaining, a payment of 220 is allocated as 100 to registration and 120 to Tuition 1. The payment is fully accounted for, and Tuition 1 has 130 still due.</div>
+
+  <h3>Manual allocation</h3>
+  <p>Staff can also allocate part of a payment to a particular instalment. The payment and instalment must belong to the same enrolment. The allocated amount cannot exceed either the unallocated part of the payment or the outstanding balance of that instalment.</p>
+
+  <h3>Instalment status</h3>
+  <table>
+    <thead><tr><th>Status</th><th>When it applies</th></tr></thead>
+    <tbody>
+      <tr><td>Pending</td><td>No active payment has been allocated and the due date has not passed.</td></tr>
+      <tr><td>Partially paid</td><td>Some, but not all, of the expected amount has been paid.</td></tr>
+      <tr><td>Paid</td><td>Active allocations meet or exceed the expected amount.</td></tr>
+      <tr><td>Overdue</td><td>There is still an unpaid amount after the due date.</td></tr>
+      <tr><td>Cancelled</td><td>The instalment has been cancelled and is no longer payable.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>6. Balances, cancellation, and auditability</h2>
+  <h3>Balance calculations</h3>
+  <p>For each enrolment, the system shows the following values:</p>
+  <ul>
+    <li><strong>Total amount</strong> = registration fee + tuition amount.</li>
+    <li><strong>Final amount</strong> = total amount - discount.</li>
+    <li><strong>Paid amount</strong> = allocations from active payments only.</li>
+    <li><strong>Remaining amount</strong> = final amount - paid amount.</li>
+  </ul>
+  <p>Cancelled instalments do not form part of the remaining payable schedule. This prevents the institution from collecting payment for a charge it has cancelled.</p>
+
+  <h3>Cancelling a payment</h3>
+  <p>A payment is not deleted. It is marked as cancelled and records who cancelled it, when, and why. Its allocations stop contributing to paid totals. The linked instalments are then recalculated, so a previously paid instalment can become partially paid, pending, or overdue again.</p>
+  <div class="rule"><strong>Business rule:</strong> a cancelled payment cannot be allocated again.</div>
+
+  <h3>Record retention</h3>
+  <p>Academic years, promotions, promotion sessions, students, payment plans, and plan instalments are archived through soft deletion rather than erased. Archived records disappear from normal active lists but can be restored. Payments preserve their financial history through status changes rather than deletion.</p>
+
+  <h2>7. Users and everyday operation</h2>
+  <p>The system identifies Admin and Staff users. A signed-in user is required to operate the protected business functions. A typical daily workflow is:</p>
+  <ol>
+    <li>Maintain academic years, promotions, sessions, and payment plans.</li>
+    <li>Create or update student records.</li>
+    <li>Enrol each student into a session with the appropriate payment plan and any approved discount.</li>
+    <li>Review the generated schedule and adjust due dates only when justified.</li>
+    <li>Record each received payment and use the generated receipt as its reference.</li>
+    <li>Monitor unpaid, partially paid, and overdue instalments; cancel payments or charges only with a recorded reason where required.</li>
+  </ol>
+
+  <p class="footer">Prepared from the current PayTrackEdu application rules. This guide describes business behaviour, not technical implementation.</p>
+</body>
+</html>
