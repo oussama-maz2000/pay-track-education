@@ -95,6 +95,15 @@ export const routes: Routes = [
       },
 
       {
+        path: 'users',
+        loadComponent: () =>
+          import('./pages/dashboard/user/user.component').then(
+            (m) => m.UserManagementComponent,
+          ),
+        title: 'Gestion des utilisateurs',
+      },
+
+      {
         path: 'enrollments',
         loadComponent: () =>
           import('./pages/dashboard/enrollment/enrollment.component').then(

@@ -42,6 +42,11 @@ export class AppSidebarComponent {
       name: 'Inscriptions',
       path: '/enrollments',
     },
+    {
+      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 19c.35-3 2.25-5 5.5-5s5.15 2 5.5 5M16 11.5a2.5 2.5 0 1 0 0-5M17 14c2.2.15 3.5 1.75 3.75 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+      name: 'Utilisateurs',
+      path: '/users',
+    },
   ];
   // Others nav items
   othersItems: NavItem[] = [
@@ -156,7 +161,6 @@ export class AppSidebarComponent {
 
   ngOnInit() {
     const removedFeaturePaths = new Set([
-      '/users',
       '/profs',
       '/branches',
       '/subjects',
