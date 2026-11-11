@@ -5,15 +5,16 @@ import com.payTrackEdu.application.domain.PaymentPlanInstallment;
 import com.payTrackEdu.application.dtos.paymentPlanInstallment.PaymentPlanInstallmentDto;
 import com.payTrackEdu.application.dtos.paymentPlanInstallment.PaymentPlanInstallmentRequest;
 import com.payTrackEdu.application.dtos.paymentPlanInstallment.PaymentPlanInstallmentResponse;
+import com.payTrackEdu.application.exception.BadRequestException;
+import com.payTrackEdu.application.exception.DuplicateResourceException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.PaymentPlanInstallmentRepository;
 import com.payTrackEdu.application.repository.PaymentPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -82,7 +83,7 @@ public class PaymentPlanInstallmentService {
     @Transactional
     public PaymentPlanInstallmentResponse restore(UUID id) {
         PaymentPlanInstallment installment = paymentPlanInstallmentRepository.findDeletedByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment plan installment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Échéance du plan de paiement introuvable"));
         validateUniqueInstallment(installment.getPaymentPlan().getId(), installment.getSequenceNumber(), installment.getId());
         validateInstallmentTotal(installment.getPaymentPlan().getId(), installment.getAmount(), installment.getId());
         installment.setDeleted(false);
@@ -94,12 +95,12 @@ public class PaymentPlanInstallmentService {
 
     private PaymentPlanInstallment findActiveInstallment(UUID id) {
         return paymentPlanInstallmentRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment plan installment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Échéance du plan de paiement introuvable"));
     }
 
     private void applyRequest(PaymentPlanInstallment installment, PaymentPlanInstallmentRequest request) {
         PaymentPlan paymentPlan = paymentPlanRepository.findByIdWithDetails(request.paymentPlanId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment plan not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Plan de paiement introuvable"));
 
         installment.setPaymentPlan(paymentPlan);
         installment.setSequenceNumber(request.sequenceNumber());
@@ -113,16 +114,13 @@ public class PaymentPlanInstallmentService {
                 ? paymentPlanInstallmentRepository.existsActiveInstallment(paymentPlanId, sequenceNumber)
                 : paymentPlanInstallmentRepository.existsActiveInstallmentForAnotherId(paymentPlanId, sequenceNumber, ignoredId);
         if (installmentExists) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Payment plan installment sequence already exists for this payment plan"
-            );
+            throw new DuplicateResourceException("Le numéro d'échéance existe déjà pour ce plan de paiement");
         }
     }
 
     private void validateInstallmentTotal(UUID paymentPlanId, BigDecimal installmentAmount, UUID ignoredInstallmentId) {
         PaymentPlan paymentPlan = paymentPlanRepository.findByIdWithDetails(paymentPlanId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment plan not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Plan de paiement introuvable"));
         BigDecimal activeInstallmentsTotal = ignoredInstallmentId == null
                 ? paymentPlanInstallmentRepository.sumActiveAmountsByPaymentPlanId(paymentPlanId)
                 : paymentPlanInstallmentRepository.sumActiveAmountsByPaymentPlanIdExcludingInstallment(
@@ -132,10 +130,7 @@ public class PaymentPlanInstallmentService {
         BigDecimal projectedTotal = normalizeAmount(activeInstallmentsTotal).add(normalizeAmount(installmentAmount));
 
         if (projectedTotal.compareTo(normalizeAmount(paymentPlan.getTotalAmount())) > 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Payment plan installment total cannot exceed the payment plan total amount"
-            );
+            throw new BadRequestException("Le total des échéances ne peut pas dépasser le montant total du plan de paiement");
         }
     }
 

@@ -8,6 +8,10 @@ import com.payTrackEdu.application.dtos.enrollment.EnrollmentDto;
 import com.payTrackEdu.application.dtos.enrollment.EnrollmentRequest;
 import com.payTrackEdu.application.dtos.enrollment.EnrollmentResponse;
 import com.payTrackEdu.application.enums.EnrollmentStatus;
+import com.payTrackEdu.application.exception.BadRequestException;
+import com.payTrackEdu.application.exception.ConflictException;
+import com.payTrackEdu.application.exception.DuplicateResourceException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.EnrollmentRepository;
 import com.payTrackEdu.application.repository.PromotionSessionRepository;
 import com.payTrackEdu.application.repository.PaymentPlanRepository;
@@ -15,10 +19,8 @@ import com.payTrackEdu.application.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -135,7 +137,7 @@ public class EnrollmentService {
     public EnrollmentResponse activate(UUID id) {
         Enrollment enrollment = findActiveEnrollment(id);
         if (enrollment.getStatus() == EnrollmentStatus.CANCELLED || enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Enrollment cannot be activated from status " + enrollment.getStatus());
+            throw new ConflictException("L'inscription ne peut pas être activée avec le statut " + enrollment.getStatus());
         }
         enrollment.setStatus(EnrollmentStatus.ACTIVE);
         return toResponse(enrollmentRepository.save(enrollment));
@@ -145,7 +147,7 @@ public class EnrollmentService {
     public EnrollmentResponse suspend(UUID id) {
         Enrollment enrollment = findActiveEnrollment(id);
         if (enrollment.getStatus() == EnrollmentStatus.CANCELLED || enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Enrollment cannot be suspended from status " + enrollment.getStatus());
+            throw new ConflictException("L'inscription ne peut pas être suspendue avec le statut " + enrollment.getStatus());
         }
         enrollment.setStatus(EnrollmentStatus.SUSPENDED);
         return toResponse(enrollmentRepository.save(enrollment));
@@ -155,7 +157,7 @@ public class EnrollmentService {
     public EnrollmentResponse cancel(UUID id) {
         Enrollment enrollment = findActiveEnrollment(id);
         if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Completed enrollment cannot be cancelled");
+            throw new ConflictException("Une inscription terminée ne peut pas être annulée");
         }
         enrollment.setStatus(EnrollmentStatus.CANCELLED);
         return toResponse(enrollmentRepository.save(enrollment));
@@ -190,30 +192,27 @@ public class EnrollmentService {
 
     private Enrollment findActiveEnrollment(UUID id) {
         return enrollmentRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enrollment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inscription introuvable"));
     }
 
     private Student findStudent(UUID id) {
         return studentRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Étudiant introuvable"));
     }
 
     private PromotionSession findPromotionSession(UUID id) {
         return promotionSessionRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Session de promotion introuvable"));
     }
 
     private PaymentPlan findPaymentPlan(UUID id) {
         return paymentPlanRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment plan not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Plan de paiement introuvable"));
     }
 
     private void validatePaymentPlanBelongsToSession(PaymentPlan paymentPlan, UUID promotionSessionId) {
         if (!paymentPlan.getPromotionSession().getId().equals(promotionSessionId)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Payment plan does not belong to the selected promotion session"
-            );
+            throw new BadRequestException("Le plan de paiement ne correspond pas à la session promotionnelle sélectionnée");
         }
     }
 
@@ -222,16 +221,13 @@ public class EnrollmentService {
                 ? enrollmentRepository.existsActiveEnrollment(studentId, promotionSessionId)
                 : enrollmentRepository.existsActiveEnrollmentForAnotherId(studentId, promotionSessionId, ignoredId);
         if (enrollmentExists) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Student already has an active enrollment for this promotion session"
-            );
+            throw new DuplicateResourceException("L'étudiant est déjà inscrit à cette session promotionnelle.");
         }
     }
 
     private void validateDiscountDoesNotExceedTotal(Enrollment enrollment) {
         if (normalizeAmount(enrollment.getDiscountAmount()).compareTo(calculateTotalAmount(enrollment)) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Discount amount cannot exceed total amount");
+            throw new BadRequestException("Le montant de la réduction ne peut pas dépasser le montant total");
         }
     }
 

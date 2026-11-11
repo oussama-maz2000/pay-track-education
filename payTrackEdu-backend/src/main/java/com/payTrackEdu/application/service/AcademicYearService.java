@@ -4,14 +4,15 @@ import com.payTrackEdu.application.domain.AcademicYear;
 import com.payTrackEdu.application.dtos.academicYear.AcademicYearRequest;
 import com.payTrackEdu.application.dtos.academicYear.AcademicYearResponse;
 import com.payTrackEdu.application.enums.YearStatus;
+import com.payTrackEdu.application.exception.BadRequestException;
+import com.payTrackEdu.application.exception.DuplicateResourceException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.AcademicYearRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -39,7 +40,7 @@ public class AcademicYearService {
     public AcademicYearResponse create(AcademicYearRequest request) {
         validateDates(request);
         if (academicYearRepository.existsByCodeIgnoreCaseAndDeletedFalse(request.code())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Academic year code already exists");
+            throw new DuplicateResourceException("Le code de l'année universitaire existe déjà");
         }
 
         AcademicYear academicYear = new AcademicYear();
@@ -53,7 +54,7 @@ public class AcademicYearService {
         validateDates(request);
         AcademicYear academicYear = findActiveAcademicYear(id);
         if (academicYearRepository.existsByCodeIgnoreCaseAndDeletedFalseAndIdNot(request.code(), id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Academic year code already exists");
+            throw new DuplicateResourceException("Le code de l'année universitaire existe déjà");
         }
 
         applyRequest(academicYear, request);
@@ -71,7 +72,8 @@ public class AcademicYearService {
 
     @Transactional
     public AcademicYearResponse restor(UUID id) {
-        AcademicYear academicYear = academicYearRepository.findByIdAndDeletedTrue(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND, "Academic year not found"));
+        AcademicYear academicYear = academicYearRepository.findByIdAndDeletedTrue(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Année universitaire introuvable"));
         academicYear.setDeleted(false);
         academicYear.setDeletedAt(null);
         academicYear.setStatus(YearStatus.ACTIVE);
@@ -82,7 +84,7 @@ public class AcademicYearService {
 
     private AcademicYear findActiveAcademicYear(UUID id) {
         return academicYearRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Academic year not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Année universitaire introuvable"));
     }
 
     private void applyRequest(AcademicYear academicYear, AcademicYearRequest request) {
@@ -94,7 +96,7 @@ public class AcademicYearService {
 
     private void validateDates(AcademicYearRequest request) {
         if (request.startDate() != null && request.endDate() != null && request.endDate().isBefore(request.startDate())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be on or after start date");
+            throw new BadRequestException("La date de fin doit être postérieure ou égale à la date de début");
         }
     }
 }

@@ -3,14 +3,14 @@ package com.payTrackEdu.application.service;
 import com.payTrackEdu.application.domain.Promotion;
 import com.payTrackEdu.application.dtos.promotion.PromotionRequest;
 import com.payTrackEdu.application.dtos.promotion.PromotionResponse;
+import com.payTrackEdu.application.exception.DuplicateResourceException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.PromotionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,7 +64,7 @@ public class PromotionService {
     @Transactional
     public PromotionResponse restore(UUID id) {
         Promotion promotion = promotionRepository.findByIdAndDeletedTrue(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Promotion introuvable"));
         promotion.setDeleted(false);
         promotion.setDeletedAt(null);
         promotion.setActive(true);
@@ -73,7 +73,7 @@ public class PromotionService {
 
     private Promotion findActivePromotion(UUID id) {
         return promotionRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Promotion introuvable"));
     }
 
     private void applyRequest(Promotion promotion, PromotionRequest request) {
@@ -90,14 +90,14 @@ public class PromotionService {
                 ? promotionRepository.existsByCodeIgnoreCaseAndDeletedFalse(normalizedCode)
                 : promotionRepository.existsByCodeIgnoreCaseAndDeletedFalseAndIdNot(normalizedCode, ignoredId);
         if (codeExists) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Promotion code already exists");
+            throw new DuplicateResourceException("Le code de la promotion existe déjà");
         }
 
         boolean nameExists = ignoredId == null
                 ? promotionRepository.existsByNameIgnoreCaseAndDeletedFalse(normalizedName)
                 : promotionRepository.existsByNameIgnoreCaseAndDeletedFalseAndIdNot(normalizedName, ignoredId);
         if (nameExists) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Promotion name already exists");
+            throw new DuplicateResourceException("Le nom de la promotion existe déjà");
         }
     }
 }

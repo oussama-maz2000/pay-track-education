@@ -8,15 +8,16 @@ import com.payTrackEdu.application.dtos.payment.PaymentDto;
 import com.payTrackEdu.application.dtos.payment.PaymentResponse;
 import com.payTrackEdu.application.enums.EnrollmentStatus;
 import com.payTrackEdu.application.enums.PaymentStatus;
+import com.payTrackEdu.application.exception.BadRequestException;
+import com.payTrackEdu.application.exception.ConflictException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.EnrollmentRepository;
 import com.payTrackEdu.application.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,18 +40,15 @@ public class PaymentService {
     public PaymentResponse create(CreatePaymentRequest request) {
         Enrollment enrollment = findEnrollment(request.enrollmentId());
         if (enrollment.getStatus() == EnrollmentStatus.CANCELLED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment cannot be created for a cancelled enrollment");
+            throw new ConflictException("Impossible de créer un paiement pour une inscription annulée");
         }
 
         if (request.amount() == null || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Payment amount must be greater than zero");
+            throw new BadRequestException("Le montant du paiement doit être supérieur à zéro");
         }
         BigDecimal remainingPayableAmount = paymentAllocationService.calculateEnrollmentRemainingPayableAmount(enrollment.getId());
         if (request.amount().compareTo(remainingPayableAmount) > 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Payment amount exceeds remaining enrollment balance"
-            );
+            throw new BadRequestException("Le montant du paiement dépasse le solde restant de l'inscription");
         }
 
         Payment payment = new Payment();
@@ -98,7 +96,7 @@ public class PaymentService {
     public PaymentResponse cancel(UUID paymentId, CancelPaymentRequest request, UUID cancelledBy) {
         Payment payment = findPayment(paymentId);
         if (payment.getStatus() == PaymentStatus.CANCELLED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment is already cancelled");
+            throw new ConflictException("Le paiement est déjà annulé");
         }
 
         payment.setStatus(PaymentStatus.CANCELLED);
@@ -113,12 +111,12 @@ public class PaymentService {
 
     private Payment findPayment(UUID id) {
         return paymentRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable"));
     }
 
     private Enrollment findEnrollment(UUID id) {
         return enrollmentRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enrollment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inscription introuvable"));
     }
 
     private String generateReceiptNumber() {

@@ -38,8 +38,8 @@ public class User extends Auditable {
     @Column(length = 30)
     private String phone;
 
-    @Column(name = "is_active")
-    private boolean isActive = true;
+    @Column(name = "active")
+    private boolean active = true;
 
 
 }

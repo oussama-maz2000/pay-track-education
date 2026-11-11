@@ -7,6 +7,8 @@ import com.payTrackEdu.application.dtos.promotionSession.PromotionSessionDto;
 import com.payTrackEdu.application.dtos.promotionSession.PromotionSessionRequest;
 import com.payTrackEdu.application.dtos.promotionSession.PromotionSessionResponse;
 import com.payTrackEdu.application.enums.PromotionSessionStatus;
+import com.payTrackEdu.application.exception.DuplicateResourceException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.AcademicYearRepository;
 import com.payTrackEdu.application.repository.PromotionRepository;
 import com.payTrackEdu.application.repository.PromotionSessionRepository;
@@ -14,10 +16,8 @@ import com.payTrackEdu.application.utils.PromotionSessionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -77,7 +77,7 @@ public class PromotionSessionService {
     @Transactional
     public PromotionSessionResponse restore(UUID id) {
         PromotionSession promotionSession = promotionSessionRepository.findByIdAndDeletedTrue(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Session de promotion introuvable"));
         promotionSession.setDeleted(false);
         promotionSession.setDeletedAt(null);
         promotionSession.setStatus(PromotionSessionStatus.OPEN);
@@ -86,14 +86,14 @@ public class PromotionSessionService {
 
     private PromotionSession findActivePromotionSession(UUID id) {
         return promotionSessionRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Session de promotion introuvable"));
     }
 
     private void applyRequest(PromotionSession promotionSession, PromotionSessionRequest request) {
         AcademicYear academicYear = academicYearRepository.findByIdAndDeletedFalse(request.academicYearId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Academic year not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Année universitaire introuvable"));
         Promotion promotion = promotionRepository.findByIdAndDeletedFalse(request.promotionId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Promotion introuvable"));
 
         promotionSession.setAcademicYear(academicYear);
         promotionSession.setPromotion(promotion);
@@ -107,10 +107,7 @@ public class PromotionSessionService {
                 ? promotionSessionRepository.existsActiveSession(academicYearId, promotionId)
                 : promotionSessionRepository.existsActiveSessionForAnotherId(academicYearId, promotionId, ignoredId);
         if (sessionExists) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Promotion session already exists for this academic year and promotion"
-            );
+            throw new DuplicateResourceException("Une session existe déjà pour cette année universitaire et cette promotion");
         }
     }
 }

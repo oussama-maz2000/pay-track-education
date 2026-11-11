@@ -41,3 +41,12 @@ Pull requests should include a clear summary, test results, linked issue or task
 ## Security & Configuration Tips
 
 Do not commit `.env`, secrets, database credentials, JWT secrets, mail passwords, or storage keys. Configure these through environment variables such as `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, and mail/storage settings. Keep local uploads outside the project directory via `STORAGE_ROOT`.
+
+## Security Follow-up
+
+Before exposing authentication and password-recovery APIs beyond local development, add rate limiting and security auditing:
+
+- Limit password-reset requests by both email (3 per 15 minutes) and IP address (10 per hour).
+- Limit OTP verification to the existing 5 attempts per OTP, and add an IP-level limit.
+- Limit failed login attempts to 5 per account per 15 minutes, with an additional IP-level limit.
+- Audit admin password resets and password-recovery events without logging passwords, OTPs, or tokens.

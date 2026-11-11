@@ -7,14 +7,15 @@ import com.payTrackEdu.application.dtos.paymentAllocation.CreatePaymentAllocatio
 import com.payTrackEdu.application.dtos.paymentAllocation.PaymentAllocationResponse;
 import com.payTrackEdu.application.enums.InstallmentStatus;
 import com.payTrackEdu.application.enums.PaymentStatus;
+import com.payTrackEdu.application.exception.BadRequestException;
+import com.payTrackEdu.application.exception.ConflictException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.EnrollmentInstallmentRepository;
 import com.payTrackEdu.application.repository.PaymentAllocationRepository;
 import com.payTrackEdu.application.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -47,18 +48,18 @@ public class PaymentAllocationService {
         BigDecimal allocationAmount = request.amount();
         BigDecimal paymentRemaining = calculatePaymentRemainingAmount(payment);
         if (paymentRemaining.compareTo(ZERO) <= 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Payment is already fully allocated");
+            throw new ConflictException("Le paiement est déjà entièrement imputé");
         }
         if (allocationAmount.compareTo(paymentRemaining) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Allocation amount exceeds payment remaining amount");
+            throw new BadRequestException("Le montant de l'imputation dépasse le montant restant du paiement");
         }
 
         BigDecimal installmentRemaining = calculateInstallmentRemainingAmount(installment);
         if (installmentRemaining.compareTo(ZERO) <= 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Installment is already fully paid");
+            throw new ConflictException("L'échéance est déjà entièrement réglée");
         }
         if (allocationAmount.compareTo(installmentRemaining) > 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Allocation amount exceeds installment remaining amount");
+            throw new BadRequestException("Le montant de l'imputation dépasse le montant restant de l'échéance");
         }
 
         PaymentAllocation allocation = createAllocation(payment, installment, allocationAmount);
@@ -185,48 +186,45 @@ public class PaymentAllocationService {
 
     private Payment findPayment(UUID id) {
         return paymentRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable"));
     }
 
     private Payment findPaymentForUpdate(UUID id) {
         return paymentRepository.findByIdWithDetailsForUpdate(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Paiement introuvable"));
     }
 
     private EnrollmentInstallment findInstallment(UUID id) {
         return enrollmentInstallmentRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enrollment installment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun versement d'inscription n'a été trouvé"));
     }
 
     private EnrollmentInstallment findInstallmentForUpdate(UUID id) {
         return enrollmentInstallmentRepository.findByIdWithDetailsForUpdate(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enrollment installment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun versement d'inscription n'a été trouvé"));
     }
 
     private void validatePaymentCanBeAllocated(Payment payment) {
         if (payment.getStatus() == PaymentStatus.CANCELLED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot allocate a cancelled payment");
+            throw new ConflictException("Impossible d'imputer un paiement annulé");
         }
     }
 
     private void validateInstallmentCanBeAllocated(EnrollmentInstallment installment) {
         if (installment.getStatus() == InstallmentStatus.CANCELLED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot allocate a cancelled installment");
+            throw new ConflictException("Impossible d'imputer une échéance annulée");
         }
     }
 
     private void validateSameEnrollment(Payment payment, EnrollmentInstallment installment) {
         if (!payment.getEnrollment().getId().equals(installment.getEnrollment().getId())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Payment and installment belong to different enrollments"
-            );
+            throw new BadRequestException("Le paiement et les versements échelonnés relèvent d'inscriptions différentes");
         }
     }
 
     private void validatePositiveAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(ZERO) <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Allocation amount must be greater than zero");
+            throw new BadRequestException("Le montant de l'allocation doit être supérieur à zéro");
         }
     }
 

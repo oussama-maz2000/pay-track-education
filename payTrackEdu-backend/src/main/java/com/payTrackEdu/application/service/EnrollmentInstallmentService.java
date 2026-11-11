@@ -8,6 +8,9 @@ import com.payTrackEdu.application.dtos.enrollmentInstallment.EnrollmentInstallm
 import com.payTrackEdu.application.enums.EnrollmentInstallmentType;
 import com.payTrackEdu.application.enums.InstallmentStatus;
 import com.payTrackEdu.application.enums.PaymentStatus;
+import com.payTrackEdu.application.exception.BadRequestException;
+import com.payTrackEdu.application.exception.ConflictException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.EnrollmentInstallmentRepository;
 import com.payTrackEdu.application.repository.EnrollmentRepository;
 import com.payTrackEdu.application.repository.PaymentAllocationRepository;
@@ -15,10 +18,8 @@ import com.payTrackEdu.application.repository.PaymentPlanInstallmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -43,7 +44,7 @@ public class EnrollmentInstallmentService {
     public void generateForEnrollment(UUID enrollmentId) {
         Enrollment enrollment = findEnrollment(enrollmentId);
         if (enrollmentInstallmentRepository.existsNonCancelledByEnrollmentId(enrollmentId, InstallmentStatus.CANCELLED)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Enrollment installments already generated");
+            throw new ConflictException("Les échéances de l'inscription ont déjà été générées");
         }
 
         List<EnrollmentInstallment> installments = buildInstallments(enrollment);
@@ -134,11 +135,11 @@ public class EnrollmentInstallmentService {
     @Transactional
     public EnrollmentInstallmentResponse updateDueDate(UUID installmentId, LocalDate dueDate) {
         if (dueDate == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Due date is required");
+            throw new BadRequestException("La date d'échéance est obligatoire");
         }
         EnrollmentInstallment installment = findInstallment(installmentId);
         if (installment.getStatus() == InstallmentStatus.CANCELLED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cancelled installment due date cannot be updated");
+            throw new ConflictException("La date d'échéance d'une échéance annulée ne peut pas être modifiée");
         }
         installment.setDueDate(dueDate);
         EnrollmentInstallment saved = enrollmentInstallmentRepository.save(installment);
@@ -159,10 +160,7 @@ public class EnrollmentInstallmentService {
     private void synchronizeEnrollmentInstallments(Enrollment enrollment) {
         UUID enrollmentId = enrollment.getId();
         if (hasActivePaymentAllocations(enrollmentId)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Enrollment installments cannot be synchronized because payments have already been allocated"
-            );
+            throw new ConflictException("Les échéances de l'inscription ne peuvent pas être synchronisées car des paiements ont déjà été imputés");
         }
 
         List<EnrollmentInstallment> existingInstallments = enrollmentInstallmentRepository
@@ -215,12 +213,12 @@ public class EnrollmentInstallmentService {
 
     private Enrollment findEnrollment(UUID enrollmentId) {
         return enrollmentRepository.findByIdWithDetails(enrollmentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enrollment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inscription introuvable"));
     }
 
     private EnrollmentInstallment findInstallment(UUID id) {
         return enrollmentInstallmentRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Enrollment installment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Aucun versement d'inscription n'a été trouvé"));
     }
 
     private List<EnrollmentInstallment> buildInstallments(Enrollment enrollment) {

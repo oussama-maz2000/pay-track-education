@@ -6,16 +6,17 @@ import com.payTrackEdu.application.dtos.paymentPlan.PaymentPlanDto;
 import com.payTrackEdu.application.dtos.paymentPlan.PaymentPlanForInstallment;
 import com.payTrackEdu.application.dtos.paymentPlan.PaymentPlanRequest;
 import com.payTrackEdu.application.dtos.paymentPlan.PaymentPlanResponse;
+import com.payTrackEdu.application.exception.BadRequestException;
+import com.payTrackEdu.application.exception.DuplicateResourceException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.PaymentPlanRepository;
 import com.payTrackEdu.application.repository.PaymentPlanInstallmentRepository;
 import com.payTrackEdu.application.repository.PromotionSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
@@ -79,7 +80,7 @@ public class PaymentPlanService {
     @Transactional
     public PaymentPlanResponse restore(UUID id) {
         PaymentPlan paymentPlan = paymentPlanRepository.findDeletedByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment plan not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Plan de paiement introuvable"));
         validateUniquePlan(paymentPlan.getPromotionSession().getId(), paymentPlan.getCode(), paymentPlan.getId());
         paymentPlan.setDeleted(false);
         paymentPlan.setDeletedAt(null);
@@ -88,12 +89,12 @@ public class PaymentPlanService {
 
     private PaymentPlan findActivePaymentPlan(UUID id) {
         return paymentPlanRepository.findByIdWithDetails(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment plan not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Plan de paiement introuvable"));
     }
 
     private void applyRequest(PaymentPlan paymentPlan, PaymentPlanRequest request) {
         PromotionSession promotionSession = promotionSessionRepository.findByIdWithDetails(request.promotionSessionId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Promotion session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Session de promotion introuvable"));
 
         paymentPlan.setPromotionSession(promotionSession);
         paymentPlan.setCode(request.code().trim());
@@ -108,20 +109,14 @@ public class PaymentPlanService {
                 ? paymentPlanRepository.existsActivePlan(promotionSessionId, normalizedCode)
                 : paymentPlanRepository.existsActivePlanForAnotherId(promotionSessionId, normalizedCode, ignoredId);
         if (planExists) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Payment plan code already exists for this promotion session"
-            );
+            throw new DuplicateResourceException("Le code du plan de paiement existe déjà pour cette session de promotion");
         }
     }
 
     private void validateTotalAmountCoversInstallments(UUID paymentPlanId, BigDecimal totalAmount) {
         BigDecimal installmentsTotal = paymentPlanInstallmentRepository.sumActiveAmountsByPaymentPlanId(paymentPlanId);
         if (normalizeAmount(totalAmount).compareTo(normalizeAmount(installmentsTotal)) < 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Payment plan total amount cannot be less than its active installment total"
-            );
+            throw new BadRequestException("Le montant total du plan de paiement ne peut pas être inférieur au total de ses échéances actives");
         }
     }
 

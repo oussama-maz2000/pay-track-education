@@ -5,14 +5,14 @@ import com.payTrackEdu.application.dtos.student.StudentDto;
 import com.payTrackEdu.application.dtos.student.StudentForEnrollment;
 import com.payTrackEdu.application.dtos.student.StudentRequest;
 import com.payTrackEdu.application.dtos.student.StudentResponse;
+import com.payTrackEdu.application.exception.DuplicateResourceException;
+import com.payTrackEdu.application.exception.ResourceNotFoundException;
 import com.payTrackEdu.application.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -75,7 +75,7 @@ public class StudentService {
     @Transactional
     public StudentResponse restore(UUID id) {
         Student student = studentRepository.findByIdAndDeletedTrue(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Étudiant introuvable"));
         validateUniqueEmail(student.getEmail(), student.getId());
         student.setDeleted(false);
         student.setDeletedAt(null);
@@ -85,7 +85,7 @@ public class StudentService {
 
     private Student findActiveStudent(UUID id) {
         return studentRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Étudiant introuvable"));
     }
 
     private void applyRequest(Student student, StudentRequest request) {
@@ -106,7 +106,7 @@ public class StudentService {
                 ? studentRepository.existsByEmailIgnoreCaseAndDeletedFalse(normalizedEmail)
                 : studentRepository.existsByEmailIgnoreCaseAndDeletedFalseAndIdNot(normalizedEmail, ignoredId);
         if (emailExists) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Student email already exists");
+            throw new DuplicateResourceException("L'adresse e-mail de l'étudiant existe déjà");
         }
     }
 
